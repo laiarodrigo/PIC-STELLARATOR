@@ -5,11 +5,7 @@ from vmecPlot2 import main as vmecPlot2
 from simsopt.mhd import Vmec, QuasisymmetryRatioResidual
 from qi_functions import MaxElongationPen, QuasiIsodynamicResidual, MirrorRatioPen
 import re
-import copy
-
-def print_dictionary(dictionary):
-    for key, value in dictionary.items():
-        print(f'{key}: {value}')
+import pandas as pd
 
 # Função para ler os RBCs e ZBSs de um arquivo VMEC
 def read_vmec_input(file_path):
@@ -34,6 +30,10 @@ def read_vmec_input(file_path):
 
     return input_data 
    
+def print_dictionary(dictionary):
+    for key, value in dictionary.items():
+        print(f'{key}: {value}')
+
 def calculate_outputs(stel: Vmec):
     # Quasisymmetry Ratio Residual
     qs = np.sum(QuasisymmetryRatioResidual(stel, [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).residuals()**2)
@@ -94,6 +94,37 @@ def random_search_vmec_input(input_vmec_file):
     dofs = surf.x
     print()
     print(f'Initial DOFs: {dofs}')
+    surf.x=np.array([0.07 ,  0.016,  0.18 ,  0.01 , -0.13 ,  0.01 ,  0.2  ,  0.06])
+    print(f'New DOFs: {stel.x}')
+    print()
+    ## Run initial stellarator and plot
+    stel.indata.mpol = max_mode + 3
+    stel.indata.ntor = max_mode + 3
+    stel.run()
+    vmecPlot2(stel.output_file)
+    
+    # Calculate outputs
+    outputs = calculate_outputs(stel)
+
+    # Create a DataFrame with the outputs
+    df = pd.DataFrame(outputs, index=[0]).round(10)  # Ajuste o número de casas decimais conforme necessário
+
+    # Create a DataFrame with the inputs
+    df_input = pd.DataFrame([read_vmec_input(input_vmec_file).values()], columns=read_vmec_input(input_vmec_file).keys()).round(3)
+
+
+    # Save the outputs and inputs to a CSV file
+    df.to_csv('outputs.csv', index=True, header=True, sep=' ')
+    df_input.to_csv('inputs.csv', index=True, header=False, sep=' ')
+    
+    '''
+    ## Change input parameters, degrees of freedom (DOFS)
+    surf.fix_all()
+    surf.fixed_range(mmin=0, mmax=max_mode, nmin=-max_mode, nmax=max_mode, fixed=False)
+    surf.fix("rc(0,0)") # Fix major radius to be the same
+    dofs = surf.x
+    print()
+    print(f'Initial DOFs: {dofs}')
     surf.x=np.array(np.random.uniform(low=-0.5, high=0.5, size=len(stel.x)))
     print(f'New DOFs: {stel.x}')
     print()
@@ -101,14 +132,17 @@ def random_search_vmec_input(input_vmec_file):
     ## Run initial stellarator and plot
     stel.run()
     vmecPlot2(stel.output_file)
+    '''
     
-# Diretório atual do script
+# Original path
 this_path = os.path.dirname(os.path.realpath(__file__))
 
-# Caminho do arquivo VMEC original
+# Load the original VMEC input file
 input_vmec_file_original = os.path.join(this_path, 'input.nfp2_QA')
 stel = Vmec(input_vmec_file_original, verbose=False)
 
-print(calculate_outputs(Vmec(input_vmec_file_original, verbose=False)))
 random_search_vmec_input(input_vmec_file_original)
+
+
+
 

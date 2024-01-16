@@ -1,13 +1,13 @@
 &INDATA
-! This file created by simsopt on January 07 2024, 21:21:08
+! This file created by simsopt on January 16 2024, 21:32:23
 
 ! ---- Geometric parameters ----
 NFP = 2
 LASYM = F
 
 ! ---- Resolution parameters ----
-MPOL = 3
-NTOR = 3
+MPOL = 4
+NTOR = 4
 NTHETA = 12
 NZETA = 10
 NS_ARRAY    =     16
@@ -37,6 +37,6 @@ RBC(   0,   0) =  1.000000000000000e+00,    ZBS(   0,   0) = -0.000000000000000e
 RBC(   1,   0) =  7.000000000000001e-02,    ZBS(   1,   0) = -1.300000000000000e-01
 RBC(  -1,   1) =  1.600000000000000e-02,    ZBS(  -1,   1) =  1.000000000000000e-02
 RBC(   0,   1) =  1.800000000000000e-01,    ZBS(   0,   1) =  2.000000000000000e-01
-RBC(   1,   1) =  1.000000000000000e-02,    ZBS(   1,   1) =  8.400000000000001e-02
+RBC(   1,   1) =  1.000000000000000e-02,    ZBS(   1,   1) =  6.000000000000000e-02
 /
 
