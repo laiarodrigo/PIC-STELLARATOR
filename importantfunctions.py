@@ -7,7 +7,7 @@ from qi_functions import MaxElongationPen, QuasiIsodynamicResidual, MirrorRatioP
 import re
 import pandas as pd
 
-# Função para ler os RBCs e ZBSs de um arquivo VMEC
+# Vmec reader, extract RBC and ZBS values from input file
 def read_vmec_input(file_path):
     input_data = {}
 
