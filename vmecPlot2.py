@@ -8,7 +8,7 @@ import math
 import sys
 from pathlib import Path
 
-def main(file,name='',figures_folder='.', coils_curves=None, s_plot_ignore=0.2,savefig=True):
+def main(file,name='',figures_folder='./results/nfp2', coils_curves=None, s_plot_ignore=0.2,savefig=True):
 
     filename = file
     if name=='': name=os.path.basename(filename)[5:-3]
@@ -382,8 +382,6 @@ def main(file,name='',figures_folder='.', coils_curves=None, s_plot_ignore=0.2,s
     plt.close()
     # exit()
 
-
-
 if __name__ == "__main__":
     #Create results folders if not present
     try:
@@ -391,4 +389,4 @@ if __name__ == "__main__":
         figures_results_path = str(Path(sys.argv[2]).resolve())
         main(sys.argv[1], sys.argv[2])
     except:
-        main(sys.argv[1]) 
+        main(sys.argv[1])
