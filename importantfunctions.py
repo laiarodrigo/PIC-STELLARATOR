@@ -26,7 +26,8 @@ def read_vmec_input(file_path):
             m = int(match.group(2))
             rbc_value = float(match.group(3))
             zbs_value = float(match.group(6))
-            input_data[(n, m)] = {'RBC': rbc_value, 'ZBS': zbs_value}
+            input_data[f'rbc_{n}_{m}'.replace('-', '_')] = {rbc_value}
+            input_data[f'zbs_{n}_{m}'.replace('-', '_')] = {zbs_value}
 
     return input_data 
    
@@ -65,16 +66,32 @@ def calculate_outputs(stel: Vmec):
     outputs = {
         'Quasisymmetry': qs,
         'Quasiisodynamic': qi,
-        'Rotational Transform': iota,
-        'Inverse Aspect Ratio': epsilon,
-        'Mean Local Magnetic Shear': shear,
-        'Vacuum Magnetic Well': well,
-        'Maximum Elongation': elongation,
-        'Mirror Ratio': mirror,
-        'Number of Field Periods NFP': nfp
+        'Rotational_Transform': iota,
+        'Inverse_Aspect_Ratio': epsilon,
+        'Mean_Local_Magnetic_Shear': shear,
+        'Vacuum_Magnetic_Well': well,
+        'Maximum_Elongation': elongation,
+        'Mirror_Ratio': mirror,
+        'Number_of_Field_Periods_NFP': nfp
     }
 
     return outputs
+
+def save_outputs_and_inputs_to_csv(outputs, input_vmec_file, output_filename='outputs.csv'):
+    # Create a DataFrame with the outputs
+    df = pd.DataFrame(outputs, index=[0]).round(10)  # Ajuste o número de casas decimais conforme necessário
+
+    # Create a DataFrame with the inputs
+    input_data = read_vmec_input(input_vmec_file)
+    df_input = pd.DataFrame([input_data.values()], columns=input_data.keys()).round(3)
+
+    # Concatenate outputs and inputs DataFrames
+    final_df = pd.concat([df_input, df], axis=1)
+    
+    # Save the outputs and inputs to a CSV file with semicolon as separator
+    final_df.to_csv(output_filename, index=True, header=True, sep=' ')
+    
+    return final_df
 
 def random_search_vmec_input(input_vmec_file):
     """
@@ -103,19 +120,6 @@ def random_search_vmec_input(input_vmec_file):
     stel.run()
     vmecPlot2(stel.output_file)
     
-    # Calculate outputs
-    outputs = calculate_outputs(stel)
-
-    # Create a DataFrame with the outputs
-    df = pd.DataFrame(outputs, index=[0]).round(10)  # Ajuste o número de casas decimais conforme necessário
-
-    # Create a DataFrame with the inputs
-    df_input = pd.DataFrame([read_vmec_input(input_vmec_file).values()], columns=read_vmec_input(input_vmec_file).keys()).round(3)
-
-
-    # Save the outputs and inputs to a CSV file
-    df.to_csv('outputs.csv', index=True, header=True, sep=' ')
-    df_input.to_csv('inputs.csv', index=True, header=False, sep=' ')
     
     '''
     ## Change input parameters, degrees of freedom (DOFS)
@@ -133,16 +137,22 @@ def random_search_vmec_input(input_vmec_file):
     stel.run()
     vmecPlot2(stel.output_file)
     '''
+
+def main():
+    # Original path
+    this_path = os.path.dirname(os.path.realpath(__file__))
+
+    # Load the original VMEC input file
+    input_vmec_file_original = os.path.join(this_path, 'input.nfp2_QA')
+    stel = Vmec(input_vmec_file_original, verbose=False)
+
+    # Random search and save outputs to CSV
+    outputs = calculate_outputs(stel)
+    config = save_outputs_and_inputs_to_csv(outputs, input_vmec_file_original, 'outputs.csv')
+    random_search_vmec_input(input_vmec_file_original)
     
-# Original path
-this_path = os.path.dirname(os.path.realpath(__file__))
-
-# Load the original VMEC input file
-input_vmec_file_original = os.path.join(this_path, 'input.nfp2_QA')
-stel = Vmec(input_vmec_file_original, verbose=False)
-
-random_search_vmec_input(input_vmec_file_original)
-
-
-
-
+    return config
+    
+if __name__ == '__main__':
+    config= main()
+    

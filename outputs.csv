@@ -1,2 +1,2 @@
- Quasisymmetry Quasiisodynamic "Rotational Transform" "Inverse Aspect Ratio" "Mean Local Magnetic Shear" "Vacuum Magnetic Well" "Maximum Elongation" "Mirror Ratio" "Number of Field Periods NFP"
-0 5.4892981907 0.0037276285 0.0580584684 0.1885337489 0.0032036663 -0.0191673771 1.4653521121 0.4934313107 2
+ rbc_0_0 zbs_0_0 rbc_1_0 zbs_1_0 rbc__1_1 zbs__1_1 rbc_0_1 zbs_0_1 rbc_1_1 zbs_1_1 Qs Quasiisodynamic Rotational_Transform Inverse_Aspect_Ratio Mean_Local_Magnetic_Shear Vacuum_Magnetic_Well Maximum_Elongation Mirror_Ratio Number_of_Field_Periods_NFP
+0 {1.0} {-0.0} {0.07} {-0.13} {0.016} {0.01} {0.18} {0.2} {0.01} {0.084} 9.8224204805 0.0024380254 0.1038845482 0.1884114582 0.0062210424 -0.0255181987 1.648304264 0.5946709343 2

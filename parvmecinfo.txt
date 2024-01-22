@@ -4,11 +4,16 @@
  > global rank:           0
  > nzeta:                10
  > ntheta3:               7
- > ntor:                  4
- > mpol1:                 3
+ > ntor:                  3
+ > mpol1:                 2
  > ntmax:                 2
- > blocksize:            20
+ > blocksize:            12
  ============================================================
+
+ >>> grid resolution:             16
+ >>> active processors:            1
+ >>> xc/gc size:                1152
+ ------------------------------------------------------------
 
  >>> grid resolution:             16
  >>> active processors:            1

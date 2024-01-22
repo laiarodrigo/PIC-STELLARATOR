@@ -4,6 +4,7 @@ from simsopt.mhd import Vmec
 from simsopt.mhd import QuasisymmetryRatioResidual
 from vmecPlot2 import main as vmecPlot2
 from qi_functions import MaxElongationPen, QuasiIsodynamicResidual, MirrorRatioPen
+
 this_path = os.path.dirname(os.path.realpath(__file__))
 input_vmec_file = os.path.join(this_path, 'input.nfp2_QA')
 stel = Vmec(input_vmec_file, verbose=False)
