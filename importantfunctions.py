@@ -148,11 +148,6 @@ def main():
 
     # Random search and save outputs to CSV
     outputs = calculate_outputs(stel)
-    config = save_outputs_and_inputs_to_csv(outputs, input_vmec_file_original, 'outputs.csv')
     random_search_vmec_input(input_vmec_file_original)
     
-    return config
-    
-if __name__ == '__main__':
-    config= main()
     
