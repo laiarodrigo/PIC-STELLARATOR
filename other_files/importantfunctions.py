@@ -1,9 +1,10 @@
-import os
+import database as db
+import sqlite3
 import numpy as np
 from simsopt.mhd import Vmec
-from vmecPlot2 import main as vmecPlot2
+from other_files.vmecPlot2 import main as vmecPlot2
 from simsopt.mhd import Vmec, QuasisymmetryRatioResidual
-from qi_functions import MaxElongationPen, QuasiIsodynamicResidual, MirrorRatioPen
+from other_files.qi_functions import MaxElongationPen, QuasiIsodynamicResidual, MirrorRatioPen
 import re
 import pandas as pd
 
@@ -26,8 +27,8 @@ def read_vmec_input(file_path):
             m = int(match.group(2))
             rbc_value = float(match.group(3))
             zbs_value = float(match.group(6))
-            input_data[f'rbc_{n}_{m}'.replace('-', '_')] = {rbc_value}
-            input_data[f'zbs_{n}_{m}'.replace('-', '_')] = {zbs_value}
+            input_data[f'rbc_{n}_{m}'.replace('-', 'm')] = rbc_value
+            input_data[f'zbs_{n}_{m}'.replace('-', 'm')] = zbs_value
 
     return input_data 
    
@@ -77,21 +78,37 @@ def calculate_outputs(stel: Vmec):
 
     return outputs
 
-def save_outputs_and_inputs_to_csv(outputs, input_vmec_file, output_filename='outputs.csv'):
-    # Create a DataFrame with the outputs
-    df = pd.DataFrame(outputs, index=[0]).round(10)  # Ajuste o número de casas decimais conforme necessário
+def save_outputs_and_inputs_to_db(outputs: dict, input_data: dict, database_file):
+    # # Create a DataFrame with the outputs
+    # df = pd.DataFrame(outputs, index=[0]).round(10)  # Ajuste o número de casas decimais conforme necessário
 
-    # Create a DataFrame with the inputs
-    input_data = read_vmec_input(input_vmec_file)
-    df_input = pd.DataFrame([input_data.values()], columns=input_data.keys()).round(3)
+    #df_input = pd.DataFrame([input_data.values()], columns=input_data.keys()).round(3)
 
     # Concatenate outputs and inputs DataFrames
-    final_df = pd.concat([df_input, df], axis=1)
+    #final_df = pd.concat([df_input, df], axis=1)
+    final_dict = {**input_data, **outputs}
     
-    # Save the outputs and inputs to a CSV file with semicolon as separator
-    final_df.to_csv(output_filename, index=True, header=True, sep=' ')
-    
-    return final_df
+    values_tuple= tuple(final_dict.values())
+  
+    conn = sqlite3.connect(database_file)
+    new_cursor = conn.cursor()
+
+    # Insert data into the database
+    new_cursor.execute("""INSERT INTO stellarators 
+                        (rbc_0_0, zbs_0_0, rbc_1_0, rbc_m1_1, rbc_0_1, rbc_1_1, zbs_1_0, zbs_m1_1,
+                        zbs_0_1, zbs_1_1, quasisymmetry, quasiisodynamic,
+                        rotational_transform, inverse_aspect_ratio, mean_local_magnetic_shear,
+                        vacuum_magnetic_well, maximum_elongation, mirror_ratio,
+                        number_of_field_periods_nfp)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        values_tuple)
+
+    # Commit the transaction
+    conn.commit()
+
+    # Close the connection
+    conn.close()
+    print(values_tuple)
 
 def random_search_vmec_input(input_vmec_file):
     """
@@ -104,6 +121,7 @@ def random_search_vmec_input(input_vmec_file):
     ## Define how many modes to Use
     max_mode = 1
 
+    '''
     ## Change input parameters, degrees of freedom (DOFS)
     surf.fix_all()
     surf.fixed_range(mmin=0, mmax=max_mode, nmin=-max_mode, nmax=max_mode, fixed=False)
@@ -118,36 +136,30 @@ def random_search_vmec_input(input_vmec_file):
     stel.indata.mpol = max_mode + 3
     stel.indata.ntor = max_mode + 3
     stel.run()
-    vmecPlot2(stel.output_file)
+    vmecPlot2(stel.output_file)'''
     
-    
-    '''
     ## Change input parameters, degrees of freedom (DOFS)
+
     surf.fix_all()
     surf.fixed_range(mmin=0, mmax=max_mode, nmin=-max_mode, nmax=max_mode, fixed=False)
     surf.fix("rc(0,0)") # Fix major radius to be the same
     dofs = surf.x
     print()
     print(f'Initial DOFs: {dofs}')
-    surf.x=np.array(np.random.uniform(low=-0.5, high=0.5, size=len(stel.x)))
+    surf.x=np.array(np.random.uniform(low=-0.1, high=0.1, size=len(stel.x)))
     print(f'New DOFs: {stel.x}')
     print()
-    print('teste')
     ## Run initial stellarator and plot
     stel.run()
     vmecPlot2(stel.output_file)
-    '''
+    
+    input_data = {}
+    
+    for i in range(len(surf.x)):
+        input_data[f'dof_{i}'] = surf.x[i]
 
-def main():
-    # Original path
-    this_path = os.path.dirname(os.path.realpath(__file__))
+    return [stel, input_data]
+    
 
-    # Load the original VMEC input file
-    input_vmec_file_original = os.path.join(this_path, 'input.nfp2_QA')
-    stel = Vmec(input_vmec_file_original, verbose=False)
-
-    # Random search and save outputs to CSV
-    outputs = calculate_outputs(stel)
-    random_search_vmec_input(input_vmec_file_original)
     
     
