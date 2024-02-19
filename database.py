@@ -1,19 +1,41 @@
 import sqlite3
 import pandas as pd
+from pathlib import Path
 
-database = '/data/nfp2/nfp2.db'
 
-# Connect to the database (create if not exists)
-conn = sqlite3.connect(database)
+# Define the path to the database folder
+database_folder = Path('data/nfp2')
+
+# Define the path to the database file within the specific field period directory
+database_file = database_folder / 'nfp2.db'
+conn = sqlite3.connect(database_file)
 
 # Create a cursor to execute SQL commands
 cursor = conn.cursor()
 
 # Create a table to store the stellarator data
-
-cursor.execute("""CREATE TABLE stellarators(id, rbc_0_0, zbs_0_0, rbc_1_0, zbs_1_0, rbc__1_1, zbs__1_1,
-    rbc_0_1, zbs_0_1, rbc_1_1, zbs_1_1, Quasisymmetry, Quasiisodynamic, Rotational_Transform, Inverse_Aspect_Ratio,
-    Mean_Local_Magnetic_Shear, Vacuum_Magnetic_Well, Maximum_Elongation, Mirror_Ratio, Number_of_Field_Periods_NFP)""")
+cursor.execute("""CREATE TABLE IF NOT EXISTS stellarators(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rbc_0_0 REAL,
+            rbc_1_0 REAL, 
+            rbc_m1_1 REAL, 
+            rbc_0_1 REAL,
+            rbc_1_1 REAL, 
+            zbs_0_0 REAL,
+            zbs_1_0 REAL, 
+            zbs_m1_1 REAL,
+            zbs_0_1 REAL,
+            zbs_1_1 REAL,
+            quasisymmetry REAL, 
+            quasiisodynamic REAL, 
+            rotational_transform REAL, 
+            inverse_aspect_ratio REAL,
+            mean_local_magnetic_shear REAL, 
+            vacuum_magnetic_well REAL, 
+            maximum_elongation REAL, 
+            mirror_ratio REAL, 
+            number_of_field_periods_nfp REAL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)""")
 
 conn.commit()
 conn.close()
