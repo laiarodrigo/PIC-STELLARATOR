@@ -1,9 +1,9 @@
-import os
-import other_files.importantfunctions as imp
+import data_analysis.DataAnalysis as da
+import data_base_support.auxiliary_functions as imp
 from simsopt.mhd import Vmec
-from other_files.vmecPlot2 import main as vmecPlot2
+from data_base_support.vmecPlot2 import main as vmecPlot2
 from pathlib import Path
-import database as db
+import data.nfp2.database as db
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     # Load the original VMEC input file
     input_vmec_file_original = str(this_path / 'data/nfp2/input.nfp2_QA')
 
-    for i in range(1, 3000):
+    for i in range(1, 300):
         print(i)
         try:
             data = imp.random_search_vmec_input(input_vmec_file_original)
@@ -29,6 +29,8 @@ def main():
         except Exception as e:
             print(f"Iteration {i} failed: {e}")
             continue
+    
+    print(da.run_vmec_simulation_with_plots(460))
 
 if __name__ == "__main__":
     main()
