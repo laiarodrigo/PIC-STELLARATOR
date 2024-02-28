@@ -1,15 +1,13 @@
 # PIC-STELLARATOR
-The PIC-STELLARATOR repository aims to establish a database for a comprehensive assessment of the conditions under which functional and efficient stellarators can be created.
+The PIC-STELLARATOR repository aims to establish a database for a comprehensive assessment of the conditions under which functional and efficient stellarators can be created and also for posterior analisation with machine learning.
 
-The repository comprises four main files:
+The repository comprises three main folders:
+* <pre>data</pre>: Contains the file that serves as a template to the creation of stellarators, a sql database python file (to origin the latter) and the the actual database. 
 
-* <pre>importantfuntions.py</pre>: Generates a stellarator, computes the outputs, and creates a CSV where each line corresponds to the configuration of a stellarator.
+* <pre>data_base_support</pre>: Contains three files which generate the template of stellarator (* <pre>VMEC_database.py</pre>, * <pre>qi_functions.py</pre>), as well as plotting useful data that comes with the previous files (* <pre>vmecPlot2.py</pre>). Additionaly, this folder has the file creates random stellarators and transports them to the database (* <pre>auxiliary_functions.py</pre>).
 
-* <pre>VMEC_database.py</pre>: This is an example file that creates a specific configuration and calculates its outputs.
-
-* <pre>qi_functions.py</pre>:
-
-* <pre>vmecPlot2.py</pre>:     
+* <pre>data_analysis</pre>: Has files to interpret the database.
+     
 \\
 ## Instalation
 Clone the repository and install the necessary packages. In the file <pre> requirements.txt </pre>, you will find all the packages required to run files from the repository.
@@ -21,7 +19,7 @@ pip install -r requirements.txt
 \\
 ## Usage
 ### Loading Data
-In the near future, some configurations and their respective results will be provided in case the user prefers not to create new stellarators. Otherwise, it is possible to run the <pre> importantfuntions.py </pre> file. This file will generate a CSV containing the columns:
+In the near future, some configurations and their respective results will be provided in case the user prefers not to create new stellarators. Otherwise, it is possible to run the <pre> main.py </pre> file. This file will generate database containing the columns:
 
 * <pre> x1 </pre>, <pre> x2 </pre>, ..., <pre> xN </pre>: The input parameters (RBC's and ZBS' values).
 * <pre> y1 </pre>: Quasisymmetry

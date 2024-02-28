@@ -1,10 +1,10 @@
-import database as db
+import data.nfp2.database as db
 import sqlite3
 import numpy as np
 from simsopt.mhd import Vmec
-from other_files.vmecPlot2 import main as vmecPlot2
+from data_base_support.vmecPlot2 import main as vmecPlot2
 from simsopt.mhd import Vmec, QuasisymmetryRatioResidual
-from other_files.qi_functions import MaxElongationPen, QuasiIsodynamicResidual, MirrorRatioPen
+from data_base_support.qi_functions import MaxElongationPen, QuasiIsodynamicResidual, MirrorRatioPen
 import re
 import pandas as pd
 
