@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+# Add the parent directory of `data` to the Python path
+parent_dir_of_data = str(Path(__file__).resolve().parent.parent)
+if parent_dir_of_data not in sys.path:
+    sys.path.append(parent_dir_of_data)
+
 import data.nfp2.database as db
 import sqlite3
 import numpy as np
@@ -6,6 +14,7 @@ from data_base_support.vmecPlot2 import main as vmecPlot2
 from simsopt.mhd import Vmec, QuasisymmetryRatioResidual
 from data_base_support.qi_functions import MaxElongationPen, QuasiIsodynamicResidual, MirrorRatioPen
 import re
+from pathlib import Path
 import pandas as pd
 
 # Vmec reader, extract RBC and ZBS values from input file
@@ -88,6 +97,8 @@ def save_outputs_and_inputs_to_db(outputs: dict, input_data: dict, database_file
     #final_df = pd.concat([df_input, df], axis=1)
     final_dict = {**input_data, **outputs}
     
+    final_dict['Number_of_Field_Periods_NFP'] = int(final_dict['Number_of_Field_Periods_NFP'])
+    
     values_tuple= tuple(final_dict.values())
   
     conn = sqlite3.connect(database_file)
@@ -151,7 +162,7 @@ def random_search_vmec_input(input_vmec_file):
     print()
     ## Run initial stellarator and plot
     stel.run()
-    vmecPlot2(stel.output_file)
+    #vmecPlot2(stel.output_file)
     
     input_data = {}
     
@@ -160,6 +171,41 @@ def random_search_vmec_input(input_vmec_file):
 
     return [stel, input_data]
     
+def run_vmec_simulation_with_plots(record_id):
+    
+    this_path = Path(__file__).resolve().parent.parent
+    print(this_path)
 
+
+    # Construct the path to the database file
+    db_path =  this_path / 'data' / 'nfp2' / 'nfp2.db' #erro mudar path
+    print(db_path)
+
+    # Connect to the SQLite database
+    conn = sqlite3.connect(str(db_path))
+    cursor = conn.cursor()
+    
+    # Retrieve the specific record from the database
+    cursor.execute("SELECT * FROM stellarators WHERE id=?", (record_id,))
+    record = cursor.fetchone()
+    conn.close()
+
+    if record is None:
+        print("Record not found.")
+        return
+
+    # Load the original VMEC input file
+    input_vmec_file_original = str(this_path / 'data/nfp2/input.nfp2_QA')
+    stel = Vmec(input_vmec_file_original, verbose=False)
+    surf = stel.boundary
+    surf.fix_all()
+    surf.fixed_range(mmin=0, mmax=1, nmin=-1, nmax=1, fixed=False) 
+    surf.fix("rc(0,0)") # Fix major radius to be the same
+    surf.x=np.concatenate((record[2:6], record[7:11]),axis=0)
+    outputs = record[12:]
+    stel.run()
+    ## Run initial stellarator and plot
+    vmecPlot2(stel.output_file)
+    return outputs
     
     

@@ -8,7 +8,7 @@ The repository comprises three main folders:
 
 * <pre>data_analysis</pre> That has files to interpret the database.
      
-\\
+\
 ## Instalation
 Clone the repository and install the necessary packages. In the file <pre> requirements.txt </pre>, you will find all the packages required to run files from the repository.
 <pre>
@@ -16,7 +16,7 @@ git clone https://github.com/laiarodrigo/PIC-STELLARATOR.git
 cd PIC-STELLARATOR
 pip install -r requirements.txt
 </pre>
-\\
+\
 ## Usage
 ### Loading Data
 In the near future, some configurations and their respective results will be provided in case the user prefers not to create new stellarators. Otherwise, it is possible to run the <pre> main.py </pre> file. This file will generate database containing the columns:
