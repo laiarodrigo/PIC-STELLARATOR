@@ -13,7 +13,7 @@ def main():
     this_path = Path(__file__).resolve().parent
 
     # Load the original VMEC input file
-    input_vmec_file_original = str(this_path / 'data/nfp2/input.nfp2_qa')
+    input_vmec_file_original = str(this_path / 'data/nfp2/input.nfp2_QA')
 
     while True:
         try:
