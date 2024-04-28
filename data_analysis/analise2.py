@@ -22,14 +22,32 @@ X_train, X_test, Y_train, Y_test = train_test_split(features, target, test_size=
 print(features.shape)
 print(target.shape)
 
-from lightgbmlss.model import LightGBMLSS
+from lightgbmlss.model import *
 from lightgbmlss.distributions.Weibull import *
 import lightgbm as lgb
 import numpy as np
 
-# Select the first 1000 samples from X_train and their corresponding labels
-X_train_subset = X_train
-Y_train_subset = Y_train
+# now i want to eliminate the outliers
+
+q1 = target.quantile(0.25)
+q3 = target.quantile(0.75)
+
+# Calculate the interquartile range (IQR)
+iqr = q3 - q1
+
+# Define bounds for what is considered an outlier
+lower_bound = q1 - 1.5 * iqr
+upper_bound = q3 + 1.5 * iqr
+
+# Filter the data to remove outliers
+target_no_outliers = Y_train[(Y_train >= lower_bound) & (Y_train <= upper_bound)]
+features_no_outliers = X_train.loc[target_no_outliers.index]
+
+test_target_no_outliers = Y_test[(Y_test >= lower_bound) & (Y_test <= upper_bound)]
+test_features_no_outliers = X_test.loc[test_target_no_outliers.index.intersection(X_test.index)]
+
+X_train_subset = features_no_outliers # Ver quantis
+Y_train_subset = target_no_outliers
 
 # Create the Dataset with max_bin parameter specified
 dtrain = lgb.Dataset(X_train_subset, label=Y_train_subset.values, params={'max_bin': 500})
@@ -46,13 +64,13 @@ param_dict = {
     "min_data_in_leaf": ["int", {"low": 20, "high": 500, "log": False}],
     "min_gain_to_split": ["float", {"low": 0.01, "high": 40, "log": True}],
     "min_sum_hessian_in_leaf": ["float", {"low": 0.01, "high": 100, "log": True}],
-    #"subsample": ["float", {"low": 0.5, "high": 1.0, "log": False}],
-    #"subsample_freq": ["int", {"low": 1, "high": 20, "log": False}],
+    "subsample": ["float", {"low": 0.5, "high": 1.0, "log": False}],
+    "subsample_freq": ["int", {"low": 1, "high": 20, "log": False}],
     "feature_fraction": ["float", {"low": 0.3, "high": 1.0, "log": False}],
     "boosting_type": ["categorical", ["dart", "goss", "gbdt"]],
     "learning_rate": ["float", {"low": 0.1, "high": 0.2, "log": True}],
     # "lambda_l1" and "lambda_l2" are commented out as before
-    #"max_delta_step": ["float", {"low": 0, "high": 1, "log": False}],
+    "max_delta_step": ["float", {"low": 0, "high": 1, "log": False}],
     "num_boost_round": ["int", {"low": 5, "high": 1000, "log": True}],
     "feature_pre_filter": ["categorical", [False]],
     "boosting": ["categorical", ["dart"]]
@@ -67,9 +85,9 @@ opt_param = lgblss.hyper_opt(
     dtrain,
     #num_boost_round=30,
     nfold=5,
-    early_stopping_rounds=50,
-    max_minutes=403,
-    n_trials=100,
+    early_stopping_rounds=100,
+    max_minutes=250,
+    n_trials=4000,
     silence=False,
     seed=13,
     hp_seed=123
@@ -95,7 +113,10 @@ lgblss.train(opt_params, dtrain, num_boost_round=n_rounds)
 torch.manual_seed(123)
 
 # Number of samples to draw from predicted distribution
-n_samples = len(X_test)  # Use the number of rows in X_test as the number of samples
+n_samples = len(test_target_no_outliers)  # Use the number of rows in X_test as the number of samples
+
+# Quantiles to calculate from predicted distribution
+quant_sel = [0.05, 0.95]
 
 # Sample from predicted distribution
 pred_samples = lgblss.predict(
@@ -105,11 +126,20 @@ pred_samples = lgblss.predict(
     seed=123
 )
 
+# Calculate quantiles from predicted distribution
+pred_quantiles = lgblss.predict(
+    X_test,
+    pred_type="quantiles",
+    n_samples=n_samples,
+    quantiles=quant_sel
+)
+
 # Return predicted distributional parameters
 pred_params = lgblss.predict(
     X_test,
     pred_type="parameters"
 )
+
 
 df_predictions = pd.DataFrame({
     "Predicted": pred_samples.flatten(),  # Flatten in case the predictions are in a 2D array
