@@ -75,6 +75,16 @@ opt_param = lgblss.hyper_opt(
     hp_seed=123
 )
 
+import pickle
+
+# Save best parameters to a file
+with open('best_params.pkl', 'wb') as f:
+    pickle.dump(opt_param, f)
+
+# Later, when you want to use these parameters for training
+with open('best_params.pkl', 'rb') as f:
+    best_params = pickle.load(f)
+
 import numpy as np
 import torch
 from lightgbmlss.model import LightGBMLSS  # Ensure this import matches your actual usage
