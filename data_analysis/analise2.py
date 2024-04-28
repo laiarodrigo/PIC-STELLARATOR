@@ -93,6 +93,16 @@ opt_param = lgblss.hyper_opt(
     hp_seed=123
 )
 
+import pickle
+
+# Save best parameters to a file
+with open('best_params.pkl', 'wb') as f:
+    pickle.dump(opt_param, f)
+
+# Later, when you want to use these parameters for training
+with open('best_params.pkl', 'rb') as f:
+    best_params = pickle.load(f)
+
 import numpy as np
 import torch
 from lightgbmlss.model import LightGBMLSS  # Ensure this import matches your actual usage
@@ -116,7 +126,7 @@ torch.manual_seed(123)
 n_samples = len(test_target_no_outliers)  # Use the number of rows in X_test as the number of samples
 
 # Quantiles to calculate from predicted distribution
-quant_sel = [0.05, 0.95]
+quant_sel = [0.25, 0.75]
 
 # Sample from predicted distribution
 pred_samples = lgblss.predict(
