@@ -145,17 +145,15 @@ print(f"Test R^2: {r2}")
 
 import pandas as pd
 import os
+import tempfile
 
-# Define the directory path
-directory = '/home/rofarate/PIC-STELLARATOR/data_analysis/'
-
-# Create the directory if it doesn't exist
-if not os.path.exists(directory):
-    os.makedirs(directory)
+# Create a temporary directory
+temp_dir = tempfile.mkdtemp(prefix='study_results_')
 
 # Load or initialize the DataFrame to hold study results
-if os.path.exists(os.path.join(directory, 'study_results.csv')):
-    df_results = pd.read_csv(os.path.join(directory, 'study_results.csv'))
+results_file = os.path.join(temp_dir, 'study_results.csv')
+if os.path.exists(results_file):
+    df_results = pd.read_csv(results_file)
 else:
     df_results = pd.DataFrame(columns=['Study Name', 'Best Score', 'Parameters'])
 
@@ -178,5 +176,4 @@ df_results = df_results.dropna(axis=1, how='all')
 df_results = pd.concat([df_results, new_row], ignore_index=True, sort=False)
 
 # Save the updated results
-df_results.to_csv(os.path.join(directory, 'study_results.csv'), index=False)
-
+df_results.to_csv(results_file, index=False)
