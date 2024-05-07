@@ -160,8 +160,16 @@ new_row = pd.DataFrame({
     'Parameters': [str(study.best_params)]
 })
 
+# Ensure consistent data types for the columns
+dtypes = {'Study Name': str, 'Best Score': float, 'Parameters': str}
+new_row = new_row.astype(dtypes)
+
+# Exclude empty or all-NA columns before concatenation
+df_results = df_results.dropna(axis=1, how='all')
+
 # Concatenate the new row to the existing DataFrame
-df_results = pd.concat([df_results, new_row], ignore_index=True)
+df_results = pd.concat([df_results, new_row], ignore_index=True, sort=False)
 
 # Save the updated results
 df_results.to_csv('/home/rofarate/PIC-STELLARATOR/data_analysis/study_results.csv', index=False)
+
