@@ -147,11 +147,15 @@ import pandas as pd
 import os
 import tempfile
 
-# Create a temporary directory
-temp_dir = tempfile.mkdtemp(prefix='study_results_')
+# Define the directory path
+directory = '/home/rofarate/PIC-STELLARATOR/data_analysis/'
+
+# Create the directory if it doesn't exist
+if not os.path.exists(directory):
+    os.makedirs(directory)
 
 # Load or initialize the DataFrame to hold study results
-results_file = os.path.join(temp_dir, 'study_results.csv')
+results_file = os.path.join(directory, 'study_results.csv')
 if os.path.exists(results_file):
     df_results = pd.read_csv(results_file)
 else:
