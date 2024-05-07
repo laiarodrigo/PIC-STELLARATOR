@@ -100,38 +100,12 @@ study = optuna.create_study(direction='minimize', sampler=sampler, pruner=optuna
 # Run the optimization with TPESampler as the sampler
 study.optimize(objective, n_trials=20, gc_after_trial=True)
 
-# Write results to a file
-with open('/home/rofarate/PIC-STELLARATOR/data_analysis/optuna_trials.txt', 'w') as f:
-    f.write(f"Best Parameters: {study.best_params}\n")
-    f.write(f"Best Score: {study.best_value}\n")
-
-    # Optionally, write all trial results
-    for trial in study.trials:
-        f.write(f"Trial {trial.number}, Value: {trial.value}, Params: {trial.params}\n")
-
-
 # Access the best parameters and best score
 best_params = study.best_params
 best_score = study.best_value
 
 print("Best Parameters:", best_params)
 print("Best Score:", best_score)
-
-print('Best trial:', study.best_trial)
-print('Best value:', study.best_value)
-print('Best parameters:', study.best_params)
-
-import lightgbm as lgb
-
-# Assuming study.best_params already includes the best hyperparameters from your Optuna study for a regression problem
-model = lgb.LGBMRegressor(**study.best_params)
-
-# Assuming features_no_outliers and target_no_outliers are your feature matrix and target vector, respectively
-model.fit(features_no_outliers, target_no_outliers)
-
-# After fitting, you can use the model to predict or evaluate it further
-# For example, to predict new values
-predictions = model.predict(test_features_no_outliers)
 
 print('Best trial:', study.best_trial)
 print('Best value:', study.best_value)
@@ -157,42 +131,37 @@ print(f"Test MSE: {mse}")
 print(f"Test MAE: {mae}")
 print(f"Test R^2: {r2}")
 
-df_predictions = pd.DataFrame({
-    "Predicted": predictions.flatten(),  # Flatten in case the predictions are in a 2D array
-    "Type": "Predicted"
-})
-df_actual = pd.DataFrame({
-    "Predicted": np.tile(Y_test, (len(predictions) // len(Y_test))),
-    "Type": "Actual"
-})
+# predictions = predictions.flatten()  # ensuring predictions are flat
+# actual_values = test_target_no_outliers.to_numpy()  # ensuring actual values are in a numpy array for consistent handling
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# Combine and plot
-df_combined = pd.concat([df_predictions, df_actual])
-plt.figure(figsize=(10, 6))
-ax = sns.kdeplot(data=df_combined, x="Predicted", hue="Type", fill=True)
-plt.title('Density Plot of Predicted Outputs vs Actual Values')
-plt.xlabel('Values')
-plt.ylabel('Density')
-handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles=handles, labels=["Predicted", "Actual"], title="Type")
-plt.show()
+# plt.figure(figsize=(10, 6))
+# sns.kdeplot(predictions, fill=true, color='blue', label='predicted')
+# sns.kdeplot(actual_values, fill=true, color='orange', label='actual')
+# plt.title('density plot of predicted outputs vs actual values')
+# plt.xlabel('values')
+# plt.ylabel('density')
+# plt.legend()
+# plt.show()
 
 import pandas as pd
 import os
 
-# Dataframe to hold study results
-if not os.path.exists('/home/rofarate/PIC-STELLARATOR/data_analysis/study_results.csv'):
-    df_results = pd.DataFrame(columns=['Study Name', 'Best Score', 'Parameters'])
-else:
+# Load or initialize the DataFrame to hold study results
+if os.path.exists('/home/rofarate/PIC-STELLARATOR/data_analysis/study_results.csv'):
     df_results = pd.read_csv('/home/rofarate/PIC-STELLARATOR/data_analysis/study_results.csv')
+else:
+    df_results = pd.DataFrame(columns=['Study Name', 'Best Score', 'Parameters'])
 
-# Append new study results
+# Create a new DataFrame for the new row
 study_name = 'stellarator_study_test'
-new_row = {'Study Name': study_name, 'Best Score': study.best_value, 'Parameters': str(study.best_params)}
-df_results = df_results.append(new_row, ignore_index=True)
+new_row = pd.DataFrame({
+    'Study Name': [study_name],
+    'Best Score': [study.best_value],
+    'Parameters': [str(study.best_params)]
+})
+
+# Concatenate the new row to the existing DataFrame
+df_results = pd.concat([df_results, new_row], ignore_index=True)
 
 # Save the updated results
 df_results.to_csv('/home/rofarate/PIC-STELLARATOR/data_analysis/study_results.csv', index=False)
