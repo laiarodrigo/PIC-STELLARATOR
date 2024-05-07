@@ -146,9 +146,16 @@ print(f"Test R^2: {r2}")
 import pandas as pd
 import os
 
+# Define the directory path
+directory = '/home/rofarate/PIC-STELLARATOR/data_analysis/'
+
+# Create the directory if it doesn't exist
+if not os.path.exists(directory):
+    os.makedirs(directory)
+
 # Load or initialize the DataFrame to hold study results
-if os.path.exists('/home/rofarate/PIC-STELLARATOR/data_analysis/study_results.csv'):
-    df_results = pd.read_csv('/home/rofarate/PIC-STELLARATOR/data_analysis/study_results.csv')
+if os.path.exists(os.path.join(directory, 'study_results.csv')):
+    df_results = pd.read_csv(os.path.join(directory, 'study_results.csv'))
 else:
     df_results = pd.DataFrame(columns=['Study Name', 'Best Score', 'Parameters'])
 
@@ -171,5 +178,5 @@ df_results = df_results.dropna(axis=1, how='all')
 df_results = pd.concat([df_results, new_row], ignore_index=True, sort=False)
 
 # Save the updated results
-df_results.to_csv('/home/rofarate/PIC-STELLARATOR/data_analysis/study_results.csv', index=False)
+df_results.to_csv(os.path.join(directory, 'study_results.csv'), index=False)
 
