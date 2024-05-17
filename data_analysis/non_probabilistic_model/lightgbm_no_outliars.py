@@ -1,92 +1,83 @@
 import sqlite3
 import pandas as pd
+from sklearn.model_selection import train_test_split
+import lightgbm as lgb
+import optuna
+import numpy as np
 
-conn = sqlite3.connect('../data/nfp2/nfp2.db')  # Adjust the path to your database file
+# Load the true positive predictions from the CSV file
+true_positive_predictions_file = 'true_positive_predictions_with_quasi.csv'
+true_positive_data = pd.read_csv(true_positive_predictions_file)
 
-# Step 2 & 3: Query the database and load the data into a pandas DataFrame
-query = "SELECT * FROM stellarators"  # Adjust your query as needed
-data_df = pd.read_sql_query(query, conn)
+# Separate features and target variable
+X = true_positive_data[['rbc_1_0', 'rbc_m1_1', 'rbc_0_1', 'rbc_1_1','zbs_1_0', 'zbs_m1_1', 'zbs_0_1', 'zbs_1_1']] 
+Y = true_positive_data['quasisymmetry']
 
-from sklearn.model_selection import train_test_split, GridSearchCV
+# Print NaN counts in the input features
+print("NaN counts in input features:")
+print(X.isna().sum())
 
-data_df_clean = data_df.dropna(subset=['quasisymmetry'])
+# Print NaN counts in the target variable
+print("NaN counts in target variable:")
+print(Y.isna().sum())
 
-X = data_df_clean[['rbc_1_0', 'rbc_m1_1', 'rbc_0_1', 'rbc_1_1','zbs_1_0', 'zbs_m1_1', 'zbs_0_1', 'zbs_1_1']] 
-Y = data_df_clean[['quasisymmetry', 'quasiisodynamic', 'rotational_transform', 'inverse_aspect_ratio', 'mean_local_magnetic_shear', 'vacuum_magnetic_well', 'maximum_elongation', 'mirror_ratio']]
+# Split the data into training and testing sets
+features_no_outliers, test_features_no_outliers, target_no_outliers, test_target_no_outliers = train_test_split(X, Y, test_size=0.2, random_state=42)
 
-target = Y['quasisymmetry']
-features = X
+print(features_no_outliers.shape)
+print(target_no_outliers.shape)
 
-X_train, X_test, Y_train, Y_test = train_test_split(features, target, test_size=0.2, random_state=42)
-
-print(features.shape)
-print(target.shape)
 
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-# Assuming Y_train, X_train, Y_test, and X_test are pandas Series/DataFrames
-
-# Calculate the IQR and bounds for outliers
-q1 = Y_train.quantile(0.05)
-q3 = Y_train.quantile(0.95) 
-iqr = q3 - q1
-lower_bound = q1 - 1.5 * iqr
-upper_bound = q3 + 1.5 * iqr
-
-# Filter out the outliers from Y_train
-target_no_outliers = Y_train[(Y_train >= lower_bound) & (Y_train <= upper_bound)]
-
-# Check and filter X_train based on the indices of the filtered Y_train
-features_no_outliers = X_train.loc[target_no_outliers.index.intersection(X_train.index)]
-
-# For X_test and Y_test, you need to apply a similar filter or ensure the indices match
-# Assuming Y_test should be filtered using the same bounds defined by Y_train
-test_target_no_outliers = Y_test[(Y_test >= lower_bound) & (Y_test <= upper_bound)]
-test_features_no_outliers = X_test.loc[test_target_no_outliers.index.intersection(X_test.index)]
-
 import lightgbm as lgb
 import numpy as np
 import optuna
-import logging
+import math
 import sys
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-from sklearn.model_selection import train_test_split, KFold
 from optuna.integration import LightGBMPruningCallback
 from optuna.visualization import plot_optimization_history, plot_param_importances
 from optuna.samplers import TPESampler, CmaEsSampler
 
-
 def objective(trial):
     param = {
         'objective': 'regression',
-        'metric': 'mse',
-        'boosting_type': 'gbdt',
-        'max_depth': trial.suggest_int('max_depth', 1, 25),
-        'num_leaves': trial.suggest_int('num_leaves', 2, 50),
-        'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 20, 300),
+        'metric': ['l1', 'mse', 'r2', 'quantile'], 
+        'boosting_type': trial.suggest_categorical('boosting_type', ['gbdt', 'dart', 'rf']),
+        'max_depth': trial.suggest_int('max_depth', 1, 50),
+        'num_leaves': trial.suggest_int('num_leaves', 2, 500, log=False),
+        'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 100, 1500),
         'feature_fraction': trial.suggest_float('feature_fraction', 0.3, 1.0),
-        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.1, log=True),
-        'num_boost_round': trial.suggest_int('num_boost_round', 100, 1000)
+        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5, log=False),
+        'num_iterations': trial.suggest_int('num_iterations', 50, 3000),
+        'data_sample_strategy': trial.suggest_categorical('data_sample_strategy', ['bagging', 'goss']),
+        'max_bins': trial.suggest_int('max_bins', 5, 2000),
+        #'min_child_weight': trial.suggest_float('min_child_weight', 0.1, 10.0),  # Add min_child_weight parameter
+        #'force_row_wise': True  # Ensure row-wise growth to support monotonic constraints
     }
 
-    # Cross-validation
-    kf = KFold(n_splits=5, shuffle=True, random_state=42)
-    mse_scores = []
-    
-    for train_index, valid_index in kf.split(X_train):
-        X_train_fold, X_valid_fold = X_train.iloc[train_index], X_train.iloc[valid_index]
-        Y_train_fold, Y_valid_fold = Y_train.iloc[train_index], Y_train.iloc[valid_index]
-        
-        gbm = lgb.LGBMRegressor(**param)
-        gbm.fit(X_train_fold, Y_train_fold, eval_set=[(X_valid_fold, Y_valid_fold)], eval_metric='mse',
-                callbacks=[lgb.early_stopping(stopping_rounds=50)])
-        preds = gbm.predict(X_valid_fold)
-        mse_scores.append(mean_squared_error(Y_valid_fold, preds))
-    
-    return np.mean(mse_scores)
+    # Define the monotonic constraint
+    #monotone_constraints = [0, 0, 0, 0, 0, 0, 0, 0]  # All features have a positive (increasing) constraint
+
+    # Train the model on the entire training set
+    gbm = lgb.LGBMRegressor(**param,
+                            #monotone_constraints=monotone_constraints
+                            )
+    gbm.fit(features_no_outliers, target_no_outliers)
+
+    # Predict on the test set
+    preds = gbm.predict(test_features_no_outliers)
+
+    # Calculate metrics
+    mse = mean_squared_error(test_target_no_outliers, preds)
+    mae = mean_absolute_error(test_target_no_outliers, preds)
+    r2 = r2_score(test_target_no_outliers, preds)
+
+    # Return the mean squared error
+    return mse
 
 # Set TPESampler as the sampler algorithm
 sampler = TPESampler()
@@ -94,11 +85,8 @@ sampler = TPESampler()
 # Create a study object and specify the optimization direction (minimize)
 study = optuna.create_study(direction='minimize', sampler=sampler, pruner=optuna.pruners.MedianPruner())
 
-# Add stream handler of stdout to show the messages
-#optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
-
 # Run the optimization with TPESampler as the sampler
-study.optimize(objective, n_trials=20, gc_after_trial=True)
+study.optimize(objective, n_trials=5000, gc_after_trial=True)
 
 # Access the best parameters and best score
 best_params = study.best_params
@@ -135,8 +123,8 @@ print(f"Test R^2: {r2}")
 # actual_values = test_target_no_outliers.to_numpy()  # ensuring actual values are in a numpy array for consistent handling
 
 # plt.figure(figsize=(10, 6))
-# sns.kdeplot(predictions, fill=true, color='blue', label='predicted')
-# sns.kdeplot(actual_values, fill=true, color='orange', label='actual')
+# sns.kdeplot(predictions, fill=True, color='blue', label='predicted')
+# sns.kdeplot(actual_values, fill=True, color='orange', label='actual')
 # plt.title('density plot of predicted outputs vs actual values')
 # plt.xlabel('values')
 # plt.ylabel('density')
@@ -148,7 +136,7 @@ import os
 import tempfile
 
 # Define the directory path
-directory = '/home/rofarate/PIC-STELLARATOR/data_analysis/'
+directory = '/home/rofarate/PIC-STELLARATOR/data_analysis/non_probabilistic_model'
 
 # Create the directory if it doesn't exist
 if not os.path.exists(directory):

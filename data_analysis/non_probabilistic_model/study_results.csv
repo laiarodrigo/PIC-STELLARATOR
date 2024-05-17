@@ -1,0 +1,3 @@
+Study Name,Best Score,Parameters
+stellarator_study_test,250.0417281171551,"{'boosting_type': 'gbdt', 'max_depth': 28, 'num_leaves': 218, 'min_data_in_leaf': 183, 'feature_fraction': 0.8597289506168069, 'learning_rate': 0.05415891117304222, 'num_iterations': 718, 'data_sample_strategy': 'bagging', 'max_bins': 828}"
+stellarator_study_test,5.66650749652238,"{'boosting_type': 'dart', 'max_depth': 26, 'num_leaves': 254, 'min_data_in_leaf': 100, 'feature_fraction': 0.9981500402147306, 'learning_rate': 0.10433405411031996, 'num_iterations': 773, 'data_sample_strategy': 'bagging', 'max_bins': 57}"
