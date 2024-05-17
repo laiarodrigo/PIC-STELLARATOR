@@ -1,0 +1,14 @@
+Parameter,Value
+max_depth,18
+num_leaves,5
+min_data_in_leaf,129
+min_gain_to_split,0.967985545750277
+min_sum_hessian_in_leaf,7.548764540205035
+feature_fraction,0.5961745220871226
+boosting_type,dart
+learning_rate,0.13123181482690746
+max_delta_step,0.3431780161508694
+num_boost_round,231
+feature_pre_filter,False
+boosting,gbdt
+opt_rounds,1

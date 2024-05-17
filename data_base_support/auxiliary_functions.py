@@ -87,43 +87,64 @@ def calculate_outputs(stel: Vmec):
 
     return outputs
 
-def save_outputs_and_inputs_to_db(outputs: dict, input_data: dict, database_file):
-    # # Create a DataFrame with the outputs
-    # df = pd.DataFrame(outputs, index=[0]).round(10)  # Ajuste o número de casas decimais conforme necessário
+import sqlite3
 
-    #df_input = pd.DataFrame([input_data.values()], columns=input_data.keys()).round(3)
+def save_outputs_and_inputs_to_db(outputs: dict, input_data: dict, database_file, convergence_status):
+    # Combine input_data and outputs
+    final_data = {**input_data, **outputs, 'convergence': convergence_status}
 
-    # Concatenate outputs and inputs DataFrames
-    #final_df = pd.concat([df_input, df], axis=1)
-    final_dict = {**input_data, **outputs}
-    
-    final_dict['Number_of_Field_Periods_NFP'] = int(final_dict['Number_of_Field_Periods_NFP'])
-    
-    values_tuple= tuple(final_dict.values())
-  
+    # If convergence_status is 0, set specific keys to None
+    if convergence_status == 0:
+        final_data.update({
+            'quasisymmetry': None,
+            'quasiisodynamic': None,
+            'rotational_transform': None,
+            'inverse_aspect_ratio': None,
+            'mean_local_magnetic_shear': None,
+            'vacuum_magnetic_well': None,
+            'maximum_elongation': None,
+            'mirror_ratio': None,
+            'number_of_field_periods_nfp': None
+        })
+
+    print(final_data)
+
+    # Ensure integer fields are rounded and converted to int
+    if 'Number_of_Field_Periods_NFP' in final_data and final_data['Number_of_Field_Periods_NFP'] is not None:
+        final_data['Number_of_Field_Periods_NFP'] = int(final_data['Number_of_Field_Periods_NFP'])
+
+    # Create a tuple of values to be inserted into the database
+    values_tuple = tuple(final_data.values())
+
+    # Connect to the database
     conn = sqlite3.connect(database_file)
-    new_cursor = conn.cursor()
+
+    # Create a cursor object
+    cursor = conn.cursor()
 
     # Insert data into the database
-    new_cursor.execute("""INSERT INTO stellarators 
-                        (rbc_0_0, zbs_0_0, rbc_1_0, rbc_m1_1, rbc_0_1, rbc_1_1, zbs_1_0, zbs_m1_1,
-                        zbs_0_1, zbs_1_1, quasisymmetry, quasiisodynamic,
-                        rotational_transform, inverse_aspect_ratio, mean_local_magnetic_shear,
-                        vacuum_magnetic_well, maximum_elongation, mirror_ratio,
-                        number_of_field_periods_nfp)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                        values_tuple)
+    cursor.execute("""INSERT INTO stellarators 
+                      (rbc_0_0, zbs_0_0, rbc_1_0, rbc_m1_1, rbc_0_1, rbc_1_1, zbs_1_0, zbs_m1_1,
+                      zbs_0_1, zbs_1_1, quasisymmetry, quasiisodynamic,
+                      rotational_transform, inverse_aspect_ratio, mean_local_magnetic_shear,
+                      vacuum_magnetic_well, maximum_elongation, mirror_ratio,
+                      number_of_field_periods_nfp, convergence)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                      values_tuple)
 
     # Commit the transaction
     conn.commit()
 
     # Close the connection
     conn.close()
-    print(values_tuple)
+    print("Data saved to database.")
+
+
 
 def random_search_vmec_input(input_vmec_file):
     """
     Perform a random search on VMEC input parameters.
+    Return the VMEC object and a boolean indicating whether the MHD differential equation converges or not.
     """
     # Load the original VMEC input file
     stel = Vmec(input_vmec_file, verbose=False)
@@ -157,19 +178,23 @@ def random_search_vmec_input(input_vmec_file):
     dofs = surf.x
     print()
     print(f'Initial DOFs: {dofs}')
-    surf.x=np.array(np.random.uniform(low=-0.1, high=0.1, size=len(stel.x)))
+    surf.x = np.array(np.random.uniform(low=-0.1, high=0.1, size=len(stel.x)))
     print(f'New DOFs: {stel.x}')
     print()
     ## Run initial stellarator and plot
-    stel.run()
-    #vmecPlot2(stel.output_file)
+    try:
+        stel.run()
+        convergence_status = 1  # If it runs without errors, consider it converged
+    except Exception as e:
+        print(f"Error algo aconteceu occurred during VMEC run: {e}")
+        convergence_status = 0  # If an error occurs, consider it not converged
     
     input_data = {}
     
     for i in range(len(surf.x)):
         input_data[f'dof_{i}'] = surf.x[i]
 
-    return [stel, input_data]
+    return [stel, input_data, convergence_status]
     
 def run_vmec_simulation_with_plots(record_id):
     

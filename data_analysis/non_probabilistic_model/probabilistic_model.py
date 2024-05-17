@@ -1,26 +1,55 @@
 import sqlite3
 import pandas as pd
+from sklearn.model_selection import train_test_split
+import seaborn as sns
+import matplotlib.pyplot as plt
+from lightgbmlss.distributions import *
+from lightgbmlss.distributions.distribution_utils import DistributionClass
+import numpy as np
 
-conn = sqlite3.connect('../data/nfp2/nfp2.db')  # Adjust the path to your database file
 
-# Step 2 & 3: Query the database and load the data into a pandas DataFrame
-query = "SELECT * FROM stellarators"  # Adjust your query as needed
-data_df = pd.read_sql_query(query, conn)
+# Load the true positive predictions from the CSV file
+true_positive_predictions_file = 'true_positive_predictions_with_quasi.csv'
+true_positive_data = pd.read_csv(true_positive_predictions_file)
 
-from sklearn.model_selection import train_test_split, GridSearchCV
+# Separate features and target variable
+X = true_positive_data[['rbc_1_0', 'rbc_m1_1', 'rbc_0_1', 'rbc_1_1','zbs_1_0', 'zbs_m1_1', 'zbs_0_1', 'zbs_1_1']] 
+Y = true_positive_data['quasisymmetry']
 
-data_df_clean = data_df.dropna(subset=['quasisymmetry'])
 
-X = data_df_clean[['rbc_1_0', 'rbc_m1_1', 'rbc_0_1', 'rbc_1_1','zbs_1_0', 'zbs_m1_1', 'zbs_0_1', 'zbs_1_1']] 
-Y = data_df_clean[['quasisymmetry', 'quasiisodynamic', 'rotational_transform', 'inverse_aspect_ratio', 'mean_local_magnetic_shear', 'vacuum_magnetic_well', 'maximum_elongation', 'mirror_ratio']]
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
-target = Y['quasisymmetry']
-features = X
+target_no_outliers_np = np.array(Y_train)
 
-X_train, X_test, Y_train, Y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+# Initialize DistributionClass
+lgblss_dist_class = DistributionClass()
 
-print(features.shape)
-print(target.shape)
+# Define candidate distributions
+candidate_distributions = [Gaussian, StudentT, Gamma, Cauchy, LogNormal, Weibull, Gumbel, Laplace]
+
+# Selecting the best distribution based on negative log-likelihood
+dist_nll = lgblss_dist_class.dist_select(target=target_no_outliers_np, candidate_distributions=candidate_distributions, max_iter=50, plot=True, figure_size=(8, 4))
+print(dist_nll)
+
+# Plot the actual data density
+plt.figure(figsize=(8, 4))
+sns.kdeplot(target_no_outliers_np, bw_adjust=0.5, label='Actual Data Density')
+plt.title('Density Function of Target Data')
+plt.xlabel('Data')
+plt.ylabel('Density')
+plt.legend()
+plt.show()
+
+# Plot the distribution of Y and Y_test
+plt.figure(figsize=(10, 6))
+sns.kdeplot(Y, label='Y (quasisymmetry)')
+sns.kdeplot(Y_test, label='Y_test (quasisymmetry)')
+plt.title('Density Plot of Y and Y_test')
+plt.xlabel('Quasisymmetry')
+plt.ylabel('Density')
+plt.legend()
+plt.show()
+
 
 from lightgbmlss.model import LightGBMLSS
 from lightgbmlss.distributions.Weibull import *
@@ -36,7 +65,7 @@ dtrain = lgb.Dataset(X_train_subset, label=Y_train_subset.values, params={'max_b
 
 # Initialize the LightGBMLSS model with the Weibull distribution
 lgblss = LightGBMLSS(
-    Weibull(stabilization="None", response_fn="exp", loss_fn="nll")
+    Weibull(stabilization="L2", response_fn="exp", loss_fn="nll")
 )
 
 # Define the parameter dictionary without max_bin
@@ -52,10 +81,9 @@ param_dict = {
     "boosting_type": ["categorical", ["dart", "goss", "gbdt"]],
     "learning_rate": ["float", {"low": 0.1, "high": 0.2, "log": True}],
     # "lambda_l1" and "lambda_l2" are commented out as before
-    #"max_delta_step": ["float", {"low": 0, "high": 1, "log": False}],
+    "max_delta_step": ["float", {"low": 0, "high": 1, "log": False}],
     "num_boost_round": ["int", {"low": 5, "high": 1000, "log": True}],
     "feature_pre_filter": ["categorical", [False]],
-    "boosting": ["categorical", ["dart"]]
 }
 
 # Set a seed for reproducibility
@@ -69,21 +97,11 @@ opt_param = lgblss.hyper_opt(
     nfold=5,
     early_stopping_rounds=50,
     max_minutes=403,
-    n_trials=7000,
-    silence=False,
+    n_trials=1,
+    silence=True,
     seed=13,
     hp_seed=123
 )
-
-import pickle
-
-# Save best parameters to a file
-with open('best_params.pkl', 'wb') as f:
-    pickle.dump(opt_param, f)
-
-# Later, when you want to use these parameters for training
-with open('best_params.pkl', 'rb') as f:
-    best_params = pickle.load(f)
 
 import numpy as np
 import torch
@@ -94,8 +112,11 @@ np.random.seed(123)
 
 # Assuming opt_param is defined somewhere in your code
 opt_params = opt_param.copy()
-n_rounds = opt_params["opt_rounds"]
-del opt_params["opt_rounds"]
+n_rounds = opt_params['num_boost_round']
+del opt_params['num_boost_round']
+
+print('ewfre', opt_params)
+print('nu, boost', n_rounds)
 
 # Assuming dtrain is defined and is an appropriate dataset for training
 # Train Model with optimized hyperparameters
@@ -121,24 +142,15 @@ pred_params = lgblss.predict(
     pred_type="parameters"
 )
 
-df_predictions = pd.DataFrame({
-    "Predicted": pred_samples.flatten(),  # Flatten in case the predictions are in a 2D array
-    "Type": "Predicted"
-})
-df_actual = pd.DataFrame({
-    "Predicted": np.tile(Y_test, (len(pred_samples) // len(Y_test))),
-    "Type": "Actual"
-})
+# Define the path for saving the CSV file
+csv_file_path = '/home/rofarate/PIC-STELLARATOR/data_analysis/non_probabilistic_model/best_parameters_prob_model.csv'
 
-import matplotlib.pyplot as plt
-import seaborn as sns
+# Create a DataFrame from the opt_param dictionary
+df_best_params = pd.DataFrame.from_dict(opt_param, orient='index', columns=['Value'])
+df_best_params.index.name = 'Parameter'
 
-# Combine and plot
-df_combined = pd.concat([df_predictions, df_actual])
-plt.figure(figsize=(10, 6))
-sns.kdeplot(data=df_combined, x="Predicted", hue="Type", fill=True)
-plt.title('Density Plot of Predicted Outputs vs Actual Values')
-plt.xlabel('Values')
-plt.ylabel('Density')
-plt.legend(title='Type')
-plt.show()
+# Save the DataFrame to a CSV file
+df_best_params.to_csv(csv_file_path)
+
+# Print confirmation message
+print("Best parameters saved to:", csv_file_path)
