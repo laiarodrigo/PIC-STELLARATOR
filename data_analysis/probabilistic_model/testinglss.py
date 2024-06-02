@@ -71,7 +71,7 @@ plt.show()
 lgblss = LightGBMLSS(
     Mixture(
         Gaussian(response_fn="softplus", stabilization="L2"), 
-        M = 10,
+        M = 2,
         tau=1.0,
         hessian_mode="individual",
     )

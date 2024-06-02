@@ -61,7 +61,7 @@ def objective(trial):
         'num_iterations': trial.suggest_int('num_iterations', 50, 3000),
         'data_sample_strategy': trial.suggest_categorical('data_sample_strategy', ['bagging', 'goss']),
         'max_bins': trial.suggest_int('max_bins', 5, 2000),
-        #'linear_tree': True  # Enable linear tree
+        'linear_tree': True  # Enable linear tree
         #'min_child_weight': trial.suggest_float('min_child_weight', 0.1, 10.0),  # Add min_child_weight parameter
         #'force_row_wise': True  # Ensure row-wise growth to support monotonic constraints
     }
