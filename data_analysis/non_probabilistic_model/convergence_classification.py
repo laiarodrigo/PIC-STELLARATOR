@@ -5,12 +5,15 @@ import lightgbm as lgb
 import optuna
 import numpy as np
 
+print("Hello, World!")
 # Train the binary classification model
 conn = sqlite3.connect('../../data/nfp2/nfp2.db')  # Adjust the path to your database file
 
 # Step 2 & 3: Query the database and load the data into a pandas DataFrame
 query = "SELECT * FROM stellarators"  # Adjust your query as needed
 data_df = pd.read_sql_query(query, conn)
+
+print('Data loaded successfully')
 
 # Extract features and target variable
 X = data_df[['rbc_1_0', 'rbc_m1_1', 'rbc_0_1', 'rbc_1_1','zbs_1_0', 'zbs_m1_1', 'zbs_0_1', 'zbs_1_1']] 
@@ -29,6 +32,8 @@ print("Not converged stel:", not_converged_stel)
 
 print(X_train.shape)
 print(Y_train.shape)
+
+print('Data split successfully')
 
 # Define the objective function for Optuna
 def objective(trial):
@@ -75,7 +80,7 @@ sampler = optuna.samplers.TPESampler(seed=42)
 study = optuna.create_study(direction='minimize', sampler=sampler)
 
 # Run the optimization
-study.optimize(objective, n_trials=100)
+study.optimize(objective, n_trials=50)
 
 # Access the best parameters and best score
 best_params = study.best_params
