@@ -10,10 +10,10 @@ import torch
 import os
 
 # Connect to the SQLite database
-conn = sqlite3.connect('../../data/nfp2/nfp2.db')  # Adjust the path to your database file
+conn = sqlite3.connect('../../data/nfp2/nfp2_combined.db')  # Adjust the path to your database file
 
 # Query the database and load the data into a pandas DataFrame
-query = "SELECT * FROM stellarators"  # Adjust your query as needed
+query = "SELECT * FROM stellarators_combined"  # Adjust your query as needed
 data_df = pd.read_sql_query(query, conn)
 
 data_df_clean = data_df[data_df['convergence'] == 1]
@@ -38,19 +38,19 @@ lgblss = LightGBMLSS(
 
 # Define the parameter dictionary without max_bin
 param_dict = {
-    "max_depth": ["int", {"low": 1, "high": 50, "log": False}],
-    "num_leaves": ["int", {"low": 2, "high": 500, "log": True}],
-    "min_data_in_leaf": ["int", {"low": 20, "high": 1500, "log": False}],
-    "min_gain_to_split": ["float", {"low": 0.01, "high": 50, "log": True}],
-    "min_sum_hessian_in_leaf": ["float", {"low": 0.01, "high": 200, "log": True}],
-    "subsample": ["float", {"low": 0.3, "high": 1.0, "log": False}],
-    "subsample_freq": ["int", {"low": 1, "high": 30, "log": False}],
+    "max_depth": ["int", {"low": 1, "high": 100, "log":False}],
+    "num_leaves": ["int", {"low": 2, "high": 384, "log": True}],
+    "min_data_in_leaf": ["int", {"low": 20, "high": 2000, "log": True}],
+    "min_gain_to_split": ["float", {"low": 0.01, "high": 100, "log": True}],
+    "min_sum_hessian_in_leaf": ["float", {"low": 0.01, "high": 100, "log": True}],
+    #"subsample": ["float", {"low": 0.3, "high": 1.0, "log": False}],
+    #"subsample_freq": ["int", {"low": 1, "high": 30, "log": True}],
     "feature_fraction": ["float", {"low": 0.3, "high": 1.0, "log": False}],
     "boosting_type": ["categorical", ["dart", "goss", "gbdt"]],
     "learning_rate": ["float", {"low": 0.01, "high": 0.5, "log": True}],
     "max_delta_step": ["float", {"low": 0, "high": 1, "log": False}],
     "feature_pre_filter": ["categorical", [False]],
-    "boosting": ["categorical", ["dart"]]
+    "boosting": ["categorical", ["dart", "gbdt"]]
 }
 
 # Set a seed for reproducibility
@@ -60,11 +60,11 @@ np.random.seed(123)
 opt_param = lgblss.hyper_opt(
     param_dict,
     dtrain,
-    num_boost_round=300,
+    num_boost_round=200,
     nfold=5,
     early_stopping_rounds=50,
     max_minutes=6000,
-    n_trials=300,
+    n_trials=2,
     silence=False,
     seed=13,
     hp_seed=123
