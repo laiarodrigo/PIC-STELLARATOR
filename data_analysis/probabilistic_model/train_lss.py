@@ -32,6 +32,9 @@ Y = np.log(data_df_clean['quasisymmetry'])
 
 features_no_outliers, test_features_no_outliers, target_no_outliers, test_target_no_outliers = train_test_split(X, Y, test_size=0.2, random_state=42)
 
+print(test_features_no_outliers.shape)
+print(test_target_no_outliers.shape)
+
 # Create the Dataset with max_bin parameter specified
 dtrain = lgb.Dataset(features_no_outliers, label=target_no_outliers.values)
 print("Data loaded successfully")
@@ -61,7 +64,7 @@ opt_params = {
     "max_delta_step": 0.3796994086587884,
     "feature_pre_filter": False,
     "boosting": "dart",  # Assuming this value remains the same
-    "opt_rounds": 300  # Assuming this value remains the same
+    "opt_rounds": 200  # Assuming this value remains the same
 }
 
 n_rounds = opt_params["opt_rounds"]
@@ -75,7 +78,7 @@ print("Model trained successfully")
 torch.manual_seed(123)
 
 # Number of samples to draw from predicted distribution
-n_samples = len(test_target_no_outliers)  # Use the number of rows in X_test as the number of samples
+n_samples = 5000  # Use the number of rows in X_test as the number of samples
 
 # Quantiles to calculate from predicted distribution
 quant_sel = [0.25, 0.75]
@@ -88,6 +91,8 @@ pred_samples = lgblss.predict(
     seed=123
 )
 
+print('predicted samples')
+
 # Calculate quantiles from predicted distribution
 pred_quantiles = lgblss.predict(
     test_features_no_outliers,
@@ -96,12 +101,19 @@ pred_quantiles = lgblss.predict(
     quantiles=quant_sel
 )
 
+print('predicted params')
+
 # Return predicted distributional parameters
 pred_params = lgblss.predict(
     test_features_no_outliers,
     pred_type="parameters"
 )
+print(pred_params)
+print('antes do plot')
 
+# Feature Importance
 lgblss.plot(test_features_no_outliers,
-            parameter="scale",
+            parameter="mix_prob_1",
             plot_type="Feature_Importance")
+
+lgblss.save_model('../probabilistic_model/first_lss.txt')
