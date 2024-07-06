@@ -6,14 +6,14 @@ from pathlib import Path
 database_folder = Path('data/nfp2')
 
 # Define the path to the database file within the specific field period directory
-database_file = database_folder / 'nfp2.db'
+database_file = database_folder / 'example.db'
 conn = sqlite3.connect(database_file)
 
 # Create a cursor to execute SQL commands
 cursor = conn.cursor()
 
 # Create a table to store the stellarator data
-cursor.execute("""CREATE TABLE IF NOT EXISTS stellarators(
+cursor.execute("""CREATE TABLE IF NOT EXISTS examples(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             rbc_0_0 REAL,
             rbc_1_0 REAL, 

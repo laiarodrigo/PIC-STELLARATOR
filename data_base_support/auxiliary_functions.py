@@ -87,8 +87,6 @@ def calculate_outputs(stel: Vmec):
 
     return outputs
 
-import sqlite3
-
 def save_outputs_and_inputs_to_db(outputs: dict, input_data: dict, database_file, convergence_status):
     # Combine input_data and outputs
     final_data = {**input_data, **outputs, 'convergence': convergence_status}
@@ -123,7 +121,7 @@ def save_outputs_and_inputs_to_db(outputs: dict, input_data: dict, database_file
     cursor = conn.cursor()
 
     # Insert data into the database
-    cursor.execute("""INSERT INTO stellarators 
+    cursor.execute("""INSERT INTO examples
                       (rbc_0_0, zbs_0_0, rbc_1_0, rbc_m1_1, rbc_0_1, rbc_1_1, zbs_1_0, zbs_m1_1,
                       zbs_0_1, zbs_1_1, quasisymmetry, quasiisodynamic,
                       rotational_transform, inverse_aspect_ratio, mean_local_magnetic_shear,
@@ -203,7 +201,7 @@ def run_vmec_simulation_with_plots(record_id):
 
 
     # Construct the path to the database file
-    db_path =  this_path / 'data' / 'nfp2' / 'nfp2.db' #erro mudar path
+    db_path =  this_path / 'data' / 'nfp2' / 'nfp2_combined.db' #erro mudar path
     print(db_path)
 
     # Connect to the SQLite database
@@ -211,7 +209,7 @@ def run_vmec_simulation_with_plots(record_id):
     cursor = conn.cursor()
     
     # Retrieve the specific record from the database
-    cursor.execute("SELECT * FROM stellarators WHERE id=?", (record_id,))
+    cursor.execute("SELECT * FROM stellarators_combined WHERE id=?", (record_id,))
     record = cursor.fetchone()
     conn.close()
 
@@ -220,7 +218,7 @@ def run_vmec_simulation_with_plots(record_id):
         return
 
     # Load the original VMEC input file
-    input_vmec_file_original = str(this_path / 'data/nfp2/input.nfp2_QA')
+    input_vmec_file_original = str(this_path / 'data_base_support/input.nfp2_QA')
     stel = Vmec(input_vmec_file_original, verbose=False)
     surf = stel.boundary
     surf.fix_all()
@@ -232,5 +230,3 @@ def run_vmec_simulation_with_plots(record_id):
     ## Run initial stellarator and plot
     vmecPlot2(stel.output_file)
     return outputs
-    
-    
