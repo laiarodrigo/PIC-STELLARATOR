@@ -2,9 +2,11 @@
 The PIC-STELLARATOR repository aims to establish a database for a comprehensive assessment of the conditions under which functional and efficient stellarators can be created and also for posterior analisation with machine learning.
 
 The repository comprises three main folders:
-* <pre>data</pre>: Contains the file that serves as a template to the creation of stellarators, a sql database python file (to origin the latter) and the the actual database. 
+* <pre>data</pre> ,
+which contains the file that serves as a template to the creation of stellarators, a sql database python file (to origin the latter) and the the actual database. 
 
-* <pre>data_base_support</pre> Contains three files which generate the template of stellarator <pre>VMEC_database.py</pre> and <pre>qi_functions.py</pre>, as well as plotting useful data that comes with the previous files -> <pre>vmecPlot2.py</pre> Additionaly, this folder has the file creates random stellarators and transports them to the database <pre>auxiliary_functions.py</pre>
+* <pre>data_base_support</pre> 
+which contains three files which generate the template of stellarator <pre>VMEC_database.py</pre> and <pre>qi_functions.py</pre>, as well as plotting useful data that comes with the previous files -> <pre>vmecPlot2.py</pre> Additionaly, this folder has the file creates random stellarators and transports them to the database <pre>auxiliary_functions.py</pre>
 
 * <pre>data_analysis</pre> That has files to interpret the database.
      
