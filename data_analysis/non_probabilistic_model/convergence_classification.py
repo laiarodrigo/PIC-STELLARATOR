@@ -5,15 +5,12 @@ import lightgbm as lgb
 import optuna
 import numpy as np
 
-print("Hello, World!")
 # Train the binary classification model
-conn = sqlite3.connect('../../data/nfp2/nfp2.db')  # Adjust the path to your database file
+conn = sqlite3.connect('../../data/nfp2/nfp2_combined.db')  # Adjust the path to your database file
 
 # Step 2 & 3: Query the database and load the data into a pandas DataFrame
-query = "SELECT * FROM stellarators"  # Adjust your query as needed
+query = "SELECT * FROM stellarators_combined"  # Adjust your query as needed
 data_df = pd.read_sql_query(query, conn)
-
-print('Data loaded successfully')
 
 # Extract features and target variable
 X = data_df[['rbc_1_0', 'rbc_m1_1', 'rbc_0_1', 'rbc_1_1','zbs_1_0', 'zbs_m1_1', 'zbs_0_1', 'zbs_1_1']] 
@@ -33,21 +30,19 @@ print("Not converged stel:", not_converged_stel)
 print(X_train.shape)
 print(Y_train.shape)
 
-print('Data split successfully')
-
 # Define the objective function for Optuna
 def objective(trial):
     # Define the parameters to be optimized
     params = {
         'objective': 'binary',
         'boosting_type': trial.suggest_categorical('boosting_type', ['gbdt', 'dart', 'rf']),
-        'max_depth': trial.suggest_int('max_depth', 1, 30),
-        'num_leaves': trial.suggest_int('num_leaves', 2, 500, log=False),
-        'n_estimators': trial.suggest_int('n_estimators', 50, 1000),
-        'subsample_for_bin': trial.suggest_int('subsample_for_bin', 10000, 300000),
+        'max_depth': trial.suggest_int('max_depth', 1, 70),
+        'num_leaves': trial.suggest_int('num_leaves', 2, 1000, log=True),
+        'n_estimators': trial.suggest_int('n_estimators', 50, 5000),
+        'subsample_for_bin': trial.suggest_int('subsample_for_bin', 100, 300000, log=True),
         'min_split_gain': trial.suggest_float('min_split_gain', 0.0, 1.0),
-        'learning_rate': trial.suggest_float('learning_rate', 0.05, 0.2, log=True),
-        'min_child_samples': trial.suggest_int('min_child_samples', 20, 300)  # Adjust the range as needed
+        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5, log=True),
+        'min_child_samples': trial.suggest_int('min_child_samples', 20, 3000)  # Adjust the range as needed
 
     }
 
@@ -80,7 +75,7 @@ sampler = optuna.samplers.TPESampler(seed=42)
 study = optuna.create_study(direction='minimize', sampler=sampler)
 
 # Run the optimization
-study.optimize(objective, n_trials=50)
+study.optimize(objective, n_trials=100)
 
 # Access the best parameters and best score
 best_params = study.best_params
@@ -126,14 +121,4 @@ print("Feature Importance:")
 for feature, importance in sorted_feature_importance:
     print(f"{feature}: {importance}")
 
-true_positive_indices = np.where((Y_test == 1) & (preds == 1))[0]
-true_positive_configurations = X_test.iloc[true_positive_indices]['rbc_1_0'].tolist()
 
-query = f"SELECT rbc_1_0, quasisymmetry FROM stellarators WHERE rbc_1_0 IN {tuple(true_positive_configurations)}"
-quasisymmetry_data = pd.read_sql_query(query, conn)
-
-# Merge quasisymmetry values with the DataFrame containing true positive predictions
-true_positive_data_with_quasi = pd.merge(X_test.iloc[true_positive_indices], quasisymmetry_data, on='rbc_1_0', how='left')
-
-# Save the true positive predictions with quasisymmetry values to a CSV file
-true_positive_data_with_quasi.to_csv('true_positive_predictions_with_quasi.csv', index=False)
