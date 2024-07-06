@@ -1,30 +1,34 @@
 import sqlite3
 from pathlib import Path
 
-# Define the path to the database file
-database_file = Path('../../data/nfp2/nfp2.db')
+combined_db_path = Path('data/nfp2/example.db')
 
-# Connect to the database
-conn = sqlite3.connect(database_file)
+def format_real_columns_to_five_decimals(db_path):
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
 
-# Create a cursor to execute SQL commands
-cursor = conn.cursor()
+        # Fetch the table information
+        cursor.execute("PRAGMA table_info(examples);")
+        columns = cursor.fetchall()
 
-# Update the "convergence" column to 0 where "quasisymmetry" > 10
-try:
-    cursor.execute("UPDATE stellarators SET convergence = 0 WHERE quasisymmetry > 10;")
-    print("Convergence values updated successfully.")
-except sqlite3.Error as e:
-    print("Error updating convergence values:", e)
+        # List of REAL columns
+        real_columns = [column[1] for column in columns if column[2] == 'REAL']
 
-# Query to count the number of rows where "convergence" is 1
-try:
-    cursor.execute("SELECT COUNT(*) FROM stellarators WHERE convergence = 1;")
-    convergence_count = cursor.fetchone()[0]
-    print(f"Number of rows where 'convergence' is 1: {convergence_count}")
-except sqlite3.Error as e:
-    print("Error querying the database:", e)
+        # Update each REAL column to have five decimal places
+        for column in real_columns:
+            cursor.execute(f"""
+                UPDATE examples 
+                SET {column} = ROUND({column}, 5);
+            """)
+        
+        conn.commit()
+        print("All REAL columns formatted to 5 decimal places.")
 
-# Commit the changes and close the connection
-conn.commit()
-conn.close()
+        conn.close()
+
+    except sqlite3.DatabaseError as e:
+        print(f"Error accessing {db_path}: {e}")
+
+# Format REAL columns in the database
+format_real_columns_to_five_decimals(combined_db_path)

@@ -8,7 +8,7 @@ import math
 import sys
 from pathlib import Path
 
-def main(file,name='',figures_folder='./results/nfp2', coils_curves=None, s_plot_ignore=0.2,savefig=True):
+def main(file,name='',figures_folder='results/nfp2', coils_curves=None, s_plot_ignore=0.2,savefig=True):
 
     filename = file
     if name=='': name=os.path.basename(filename)[5:-3]
