@@ -75,7 +75,7 @@ sampler = optuna.samplers.TPESampler(seed=42)
 study = optuna.create_study(direction='minimize', sampler=sampler)
 
 # Run the optimization
-study.optimize(objective, n_trials=50)
+study.optimize(objective, n_trials=100)
 
 # Access the best parameters and best score
 best_params = study.best_params
