@@ -1,34 +1,23 @@
 import sqlite3
 from pathlib import Path
 
-combined_db_path = Path('data/nfp2/example.db')
+combined_db_path = Path('data/nfp2/nfp2.db')
 
-def format_real_columns_to_five_decimals(db_path):
+def count_negative_quasiisodynamic(db_path):
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        # Fetch the table information
-        cursor.execute("PRAGMA table_info(examples);")
-        columns = cursor.fetchall()
-
-        # List of REAL columns
-        real_columns = [column[1] for column in columns if column[2] == 'REAL']
-
-        # Update each REAL column to have five decimal places
-        for column in real_columns:
-            cursor.execute(f"""
-                UPDATE examples 
-                SET {column} = ROUND({column}, 5);
-            """)
-        
-        conn.commit()
-        print("All REAL columns formatted to 5 decimal places.")
+        # Count rows with negative quasiisodynamic
+        cursor.execute("SELECT COUNT(*) FROM stellarators WHERE quasiisodynamic < 0;")
+        count = cursor.fetchone()[0]
+        print(f"Number of rows with negative quasiisodynamic: {count}")
 
         conn.close()
 
     except sqlite3.DatabaseError as e:
         print(f"Error accessing {db_path}: {e}")
 
-# Format REAL columns in the database
-format_real_columns_to_five_decimals(combined_db_path)
+# Count rows with negative quasiisodynamic in the database
+count_negative_quasiisodynamic(combined_db_path)
+
