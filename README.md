@@ -23,17 +23,15 @@ Some configurations and their respective results are provided in case the user p
 | Column | Column Name | Description |
 |-------------|-------------|-------------|
 | `x1`, `x2`, ..., `xN` | The input parameters (RBC's and ZBS' values) | These Fourier coefficients collectively define the stellarator surface, enabling the calculation of the other columns. |
-| `y1` | Quasisymmetry | symmetry found in toroidal magnetic fields that aid in the confinement of charged
-particles by reducing the radial drifts that lead to particle losses. |
+| `y1` | Quasisymmetry | symmetry found in toroidal magnetic fields that aid in the confinement of charged particles by reducing the radial drifts that lead to particle losses. |
 | `y2` | Quasiisodynamic |  A quasiisodynamic field is omnigenous and has poloidally closed contours of constant field strength which helps eliminate the bootstrap current in the limit of low collision frequency, being beneficial for avoiding current-driven instabilities. |
 | `y3` | Rotational Transform | Measures how magnetic field lines wind around the toroidal plasma confinement device, defined as the number of times a field line wraps poloidally for each complete toroidal circuit. |
-| `y4` | Inverse Aspect Ratio |  Inverse of the ratio of the major radius (distance from the
-torus center to the tube center) to the minor radius (radius of the tube). |
+| `y4` | Inverse Aspect Ratio |  Inverse of the ratio of the major radius (distance from the torus center to the tube center) to the minor radius (radius of the tube). |
 | `y5` | Mean Local Magnetic Shear | The local rate of rotation of the magnetic field direction and is another equilibrium quantity that plays an important role in the stability. |
 | `y6` | Vacuum Magnetic Well | Defined as the second derivative of the volume enclosed by a flux surface with respect to the toroidal flux, measuring how the volume of the plasma changes as it moves through different layers of the magnetic field. |
 | `y7` | Maximum Elongation | Refers to the shape of the plasma cross-section being stretched, increasing the plasma’s area-to-volume ratio. |
 | `y8` | Mirror Ratio | Ratio of the maximum to the minimum magnetic field strength along the magnetic axis. |
-| `y9` | Number of Field Periods NFP | Indicates the number of times the magnetic field pattern repeats itself as one moves around the toroidal direction |
+| `y9` | Number of Field Periods NFP | Indicates the number of times the magnetic field pattern repeats itself as one moves around the toroidal direction. |
 
 
 ## Reference Papers about Database columns
