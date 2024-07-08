@@ -23,16 +23,19 @@ pip install -r requirements.txt
 ### Loading Data
 In the near future, some configurations and their respective results will be provided in case the user prefers not to create new stellarators. Otherwise, it is possible to run the <pre> main.py </pre> file. This file will generate database containing the columns:
 
-* <pre> x1 </pre>, <pre> x2 </pre>, ..., <pre> xN </pre>: The input parameters (RBC's and ZBS' values).
-* <pre> y1 </pre>: Quasisymmetry
-* <pre> y2 </pre>: Quasiisodynamic
-* <pre> y3 </pre>: Rotational Transform
-* <pre> y4 </pre>: Inverse Aspect Ratio
-* <pre> y5 </pre>: Mean Local Magnetic Shear
-* <pre> y6 </pre>: Vacuum Magnetic Well
-* <pre> y7 </pre>: Maximum Elongation
-* <pre> y8 </pre>: Mirror Ratio
-* <pre> y9 </pre>: Number of Field Periods NFP
+| Column Name | Description |
+|-------------|-------------|
+| `x1`, `x2`, ..., `xN` | The input parameters (RBC's and ZBS' values) |
+| `y1` | Quasisymmetry |
+| `y2` | Quasiisodynamic |
+| `y3` | Rotational Transform |
+| `y4` | Inverse Aspect Ratio |
+| `y5` | Mean Local Magnetic Shear |
+| `y6` | Vacuum Magnetic Well |
+| `y7` | Maximum Elongation |
+| `y8` | Mirror Ratio |
+| `y9` | Number of Field Periods NFP |
+
 
 ## Acknowledgements
 Thanks to Gonçalo Abreu and Rogério Jorge for kickstarting this project.
