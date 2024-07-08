@@ -37,7 +37,7 @@ Some configurations and their respective results are provided in case the user p
 ## Reference Papers about Database columns
 
 [![ResearchGate](https://img.shields.io/badge/ResearchGate-Magnetic_fields_with_precise_quasisymmetry-brightgreen)](https://www.researchgate.net/publication/353791041_Magnetic_fields_with_precise_quasisymmetry)
-[![arXiv](https://img.shields.io/badge/arXiv-2211.09829-brightgreen)](https://arxiv.org/abs/2211.09829_Constructing_precisely_ quasi_isodynamic_magnetic_fields)
+[![arXiv](https://img.shields.io/badge/arXiv-2211.09829-brightgreen)](https://arxiv.org/abs/2211.09829)
 [![arXiv](https://img.shields.io/badge/arXiv-2006.14881-brightgreen)](https://arxiv.org/abs/2006.14881)
 
 
