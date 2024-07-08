@@ -78,7 +78,7 @@ sampler = TPESampler()
 study = optuna.create_study(direction='minimize', sampler=sampler, pruner=optuna.pruners.MedianPruner())
 
 # Run the optimization with TPESampler as the sampler
-study.optimize(objective, n_trials=25, gc_after_trial=True)
+study.optimize(objective, n_trials=10, gc_after_trial=True)
 
 # Access the best parameters and best score
 best_params = study.best_params
