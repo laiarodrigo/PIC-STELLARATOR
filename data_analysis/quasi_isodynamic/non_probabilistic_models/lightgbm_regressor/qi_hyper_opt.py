@@ -38,7 +38,7 @@ print('starting objective function')
 def objective(trial):
     param = {
         'objective': 'regression',
-        'metric': ['mse'], 
+        'metric': ['mse', 'mae'], 
         'boosting_type': trial.suggest_categorical('boosting_type', ['gbdt', 'dart', 'rf']),
         'max_depth': trial.suggest_int('max_depth', 1, 150),
         'num_leaves': trial.suggest_int('num_leaves', 2, 5000, log=False),
@@ -50,8 +50,9 @@ def objective(trial):
         'max_bins': trial.suggest_int('max_bins', 5, 10000),
         'linear_tree': True,  # Enable linear tree
         #'min_child_weight': trial.suggest_float('min_child_weight', 0.1, 10.0),  # Add min_child_weight parameter
-        'tree_learner': trial.suggest_categorical('tree_learner', ['voting', 'data', 'feature', 'serial']),
-        'force_row_wise': True  # Ensure row-wise growth to support monotonic constraints
+        #'tree_learner': trial.suggest_categorical('tree_learner', ['voting', 'data', 'feature', 'serial']),
+        'force_row_wise': True,  # Ensure row-wise growth to support monotonic constraints
+        'device': 'gpu'  # Use GPU
     }
 
     # Train the model on the entire training set
@@ -78,7 +79,7 @@ sampler = TPESampler()
 study = optuna.create_study(direction='minimize', sampler=sampler, pruner=optuna.pruners.MedianPruner())
 
 # Run the optimization with TPESampler as the sampler
-study.optimize(objective, n_trials=10, gc_after_trial=True)
+study.optimize(objective, n_trials=1, gc_after_trial=True)
 
 # Access the best parameters and best score
 best_params = study.best_params
@@ -122,14 +123,14 @@ import os
 import tempfile
 
 # Define the directory path
-directory = '../quasi_symmetry/non_probabilistic_model/lightgbm_regressor'
+#directory = 'data_analysis/quasi_isodynamic/non_probabilistic_models/lightgbm_regressor'
 
 # Create the directory if it doesn't exist
-if not os.path.exists(directory):
-    os.makedirs(directory)
+# if not os.path.exists(directory):
+#     os.makedirs(directory)
 
 # Load or initialize the DataFrame to hold study results
-results_file = os.path.join(directory, 'study_results.csv')
+results_file = os.path.join('study_results.csv')
 if os.path.exists(results_file):
     df_results = pd.read_csv(results_file)
 else:
