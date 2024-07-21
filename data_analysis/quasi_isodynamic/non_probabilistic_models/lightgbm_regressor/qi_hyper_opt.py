@@ -38,7 +38,7 @@ print('starting objective function')
 def objective(trial):
     param = {
         'objective': 'regression',
-        'metric': ['mse', 'mae'], 
+        'metric': ['mae'], 
         'boosting_type': trial.suggest_categorical('boosting_type', ['gbdt', 'dart', 'rf']),
         'max_depth': trial.suggest_int('max_depth', 1, 150),
         'num_leaves': trial.suggest_int('num_leaves', 2, 5000, log=False),
@@ -52,7 +52,7 @@ def objective(trial):
         #'min_child_weight': trial.suggest_float('min_child_weight', 0.1, 10.0),  # Add min_child_weight parameter
         #'tree_learner': trial.suggest_categorical('tree_learner', ['voting', 'data', 'feature', 'serial']),
         'force_row_wise': True,  # Ensure row-wise growth to support monotonic constraints
-        'device': 'gpu'  # Use GPU
+        #'device': 'gpu'  # Use GPU
     }
 
     # Train the model on the entire training set
@@ -70,7 +70,7 @@ def objective(trial):
     r2 = r2_score(test_target_no_outliers, preds)
 
     # Return the mean squared error
-    return mse
+    return mae
 
 # Set TPESampler as the sampler algorithm
 sampler = TPESampler()
@@ -130,7 +130,7 @@ import tempfile
 #     os.makedirs(directory)
 
 # Load or initialize the DataFrame to hold study results
-results_file = os.path.join('study_results.csv')
+results_file = os.path.join('study_results_mae.csv')
 if os.path.exists(results_file):
     df_results = pd.read_csv(results_file)
 else:
