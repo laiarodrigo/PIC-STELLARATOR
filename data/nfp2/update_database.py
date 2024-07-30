@@ -3,21 +3,25 @@ from pathlib import Path
 
 combined_db_path = Path('data/nfp2/nfp2.db')
 
-def count_negative_quasiisodynamic(db_path):
+def print_first_eight_columns(db_path):
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        # Count rows with negative quasiisodynamic
-        cursor.execute("SELECT COUNT(*) FROM stellarators WHERE quasiisodynamic < 0;")
-        count = cursor.fetchone()[0]
-        print(f"Number of rows with negative quasiisodynamic: {count}")
+        # Select the first eight columns from the first 10 rows where convergence = 1
+        cursor.execute("""
+            SELECT * FROM stellarators WHERE convergence = 1 LIMIT 10;
+        """)
+        rows = cursor.fetchall()
+        
+        # Assuming the table has at least 8 columns
+        for row in rows:
+            print(row[:8])
 
         conn.close()
 
     except sqlite3.DatabaseError as e:
         print(f"Error accessing {db_path}: {e}")
 
-# Count rows with negative quasiisodynamic in the database
-count_negative_quasiisodynamic(combined_db_path)
-
+# Print the first eight columns from the first 10 lines where convergence = 1
+print_first_eight_columns(combined_db_path)
