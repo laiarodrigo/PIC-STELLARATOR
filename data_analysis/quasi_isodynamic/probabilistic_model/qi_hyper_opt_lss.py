@@ -6,8 +6,9 @@ from lightgbmlss.distributions.Mixture import Mixture
 from sklearn.model_selection import train_test_split
 import lightgbm as lgb
 import numpy as np
-import torch
 import os
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+import torch
 
 # Connect to the SQLite database
 conn = sqlite3.connect('../../../data/nfp2/nfp2_combined.db')  # Adjust the path to your database file
@@ -27,9 +28,10 @@ features_no_outliers, test_features_no_outliers, target_no_outliers, test_target
 # Create the Dataset with max_bin parameter specified
 dtrain = lgb.Dataset(features_no_outliers, label=target_no_outliers.values)
 
+# Configure LightGBMLSS to use CPU
 lgblss = LightGBMLSS(
     Mixture(
-        Gaussian(response_fn="exp"), 
+        Gaussian(response_fn="softplus"), 
         M = 2,
         tau=1.0,
         hessian_mode="individual", #grouped
@@ -38,17 +40,15 @@ lgblss = LightGBMLSS(
 
 # Define the parameter dictionary without max_bin
 param_dict = {
-    "device": ["categorical", ["gpu"]],
+    "device_type": ["categorical", ["cpu"]],  # Ensure it uses CPU
     "max_depth": ["int", {"low": 1, "high": 150, "log":False}],
     "num_leaves": ["int", {"low": 2, "high": 384, "log": True}],
     "min_data_in_leaf": ["int", {"low": 20, "high": 3000, "log": True}],
     "min_gain_to_split": ["float", {"low": 0.01, "high": 100, "log": True}],
     "min_sum_hessian_in_leaf": ["float", {"low": 0.01, "high": 100, "log": True}],
-    #"subsample": ["float", {"low": 0.3, "high": 1.0, "log": False}],
-    #"subsample_freq": ["int", {"low": 1, "high": 30, "log": True}],
     "feature_fraction": ["float", {"low": 0.3, "high": 1.0, "log": False}],
     "boosting_type": ["categorical", ["dart", "goss", "gbdt"]],
-    "learning_rate": ["float", {"low": 0.01, "high": 0.5, "log": True}],
+    "learning_rate": ["float", {"low": 0.001, "high": 0.4, "log": True}],
     "max_delta_step": ["float", {"low": 0, "high": 1, "log": False}],
     "feature_pre_filter": ["categorical", [False]],
     "boosting": ["categorical", ["dart", "gbdt"]]
@@ -65,7 +65,7 @@ opt_param = lgblss.hyper_opt(
     nfold=5,
     early_stopping_rounds=30,
     max_minutes=6000,
-    n_trials=2,
+    n_trials=160,
     silence=False,
     seed=13,
     hp_seed=123
@@ -74,7 +74,7 @@ opt_param = lgblss.hyper_opt(
 # Print the best parameters after optimization
 print("Best Parameters:", opt_param)
 
-# Assuming opt_param is defined somewhere in your code
+# Assuming opt_param is defined somewhere in your codedarr
 opt_params = opt_param.copy()
 n_rounds = opt_params["opt_rounds"]
 del opt_params["opt_rounds"]
@@ -82,20 +82,47 @@ del opt_params["opt_rounds"]
 # Train the model with the optimized hyperparameters
 lgblss.train(opt_params, dtrain, num_boost_round=n_rounds)
 
-# # Evaluate the model on the test set
-# test_predictions = lgblss.predict(test_features_no_outliers, pred_type="parameters")
-# test_predictions_mean = test_predictions[:, 0]
+print("Model trained successfully")
 
-# # Calculate the mean squared error (MSE) on the test set
-# mse = np.mean((test_target_no_outliers - test_predictions_mean) ** 2)
-# print(f"Test MSE: {mse}")
+# Seed for reproducibility in torch operations
+torch.manual_seed(123)
 
+# Number of samples to draw from predicted distribution
+n_samples = 5000  # Use the number of rows in X_test as the number of samples
+
+# Quantiles to calculate from predicted distribution
+quant_sel = [0.25, 0.75]
+
+# Sample from predicted distribution
+pred_samples = lgblss.predict(
+    test_features_no_outliers,
+    pred_type="samples",
+    n_samples=n_samples,
+    seed=123
+)
+
+print('predicted samples')
+
+# Calculate quantiles from predicted distribution
+pred_quantiles = lgblss.predict(
+    test_features_no_outliers,
+    pred_type="quantiles",
+    n_samples=n_samples,
+    quantiles=quant_sel
+)
+
+print('predicted params')
+
+# Return predicted distributional parameters
+pred_params = lgblss.predict(
+    test_features_no_outliers,
+    pred_type="parameters"
+)
+print(pred_params)
+
+lgblss.save_model('first_lss.txt')
 # Save the results
-directory = '../quasi_isodynamic/probabilistic_model'
-if not os.path.exists(directory):
-    os.makedirs(directory)
-
-results_file = os.path.join(directory, 'study_results_lss.csv')
+results_file = os.path.join('study_results_lss.csv')
 if os.path.exists(results_file):
     df_results = pd.read_csv(results_file)
 else:
@@ -104,11 +131,10 @@ else:
 study_name = 'stellarator_study_test'
 new_row = pd.DataFrame({
     'Study Name': [study_name],
-   # 'Best Score': [mse],
     'Parameters': [str(opt_params)]
 })
 
-dtypes = {'Study Name': str, 'Best Score': float, 'Parameters': str}
+dtypes = {'Study Name': str, 'Parameters': str}
 new_row = new_row.astype(dtypes)
 
 df_results = pd.concat([df_results, new_row], ignore_index=True, sort=False)
