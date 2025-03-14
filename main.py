@@ -47,7 +47,16 @@ def main():
     #         # Print other exceptions normally
     #         print(f"Iteration failed: {e}")
     #         continue
-    imp.run_vmec_simulation_with_plots(5023968)
+    #imp.run_vmec_simulation_with_plots(10023083)
+    #imp.run_vmec_simulation_with_plots(1174872)
+    #imp.run_vmec_simulation_with_plots(11298784)
+    #imp.run_vmec_simulation_with_plots(244508)
+    #imp.run_vmec_simulation_with_plots(7091918)
+    ################
+    #imp.run_vmec_simulation_with_plots(4918980)
+    imp.run_vmec_simulation_with_plots(4796644)
+    #imp.run_vmec_simulation_with_plots(11232037)
+    #imp.run_vmec_simulation_with_plots(3062344)
 
 if __name__ == "__main__":
     main()
