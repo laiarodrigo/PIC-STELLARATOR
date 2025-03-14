@@ -8,7 +8,7 @@ import math
 import sys
 from pathlib import Path
 
-def main(file,name='',figures_folder='results/nfp2', coils_curves=None, s_plot_ignore=0.2,savefig=True):
+def main(file,name='',figures_folder='results/weighted_sum_qi', coils_curves=None, s_plot_ignore=0.2,savefig=True):
 
     filename = file
     if name=='': name=os.path.basename(filename)[5:-3]
@@ -315,27 +315,28 @@ def main(file,name='',figures_folder='results/nfp2', coils_curves=None, s_plot_i
 
     ########################################################
     # Now make 3D surface plot
-    ########################################################
+########################################################
 
     fig = plt.figure()
 
     ntheta = 80
     nzeta = int(150*nfp)
-    theta1D = np.linspace(0,2*np.pi,num=ntheta)
-    zeta1D = np.linspace(0,2*np.pi,num=nzeta)
-    zeta2D, theta2D = np.meshgrid(zeta1D,theta1D)
+    theta1D = np.linspace(0, 2*np.pi, num=ntheta)
+    zeta1D = np.linspace(0, 2*np.pi, num=nzeta)
+    zeta2D, theta2D = np.meshgrid(zeta1D, theta1D)
     iradius = ns-1
-    R = np.zeros((ntheta,nzeta))
-    Z = np.zeros((ntheta,nzeta))
-    B = np.zeros((ntheta,nzeta))
+    R = np.zeros((ntheta, nzeta))
+    Z = np.zeros((ntheta, nzeta))
+    B = np.zeros((ntheta, nzeta))
+
     for imode in range(nmodes):
-        angle = xm[imode]*theta2D - xn[imode]*zeta2D
-        R = R + rmnc[iradius,imode]*np.cos(angle) + rmns[iradius,imode]*np.sin(angle)
-        Z = Z + zmns[iradius,imode]*np.sin(angle) + zmnc[iradius,imode]*np.cos(angle)
+        angle = xm[imode] * theta2D - xn[imode] * zeta2D
+        R = R + rmnc[iradius, imode] * np.cos(angle) + rmns[iradius, imode] * np.sin(angle)
+        Z = Z + zmns[iradius, imode] * np.sin(angle) + zmnc[iradius, imode] * np.cos(angle)
 
     for imode in range(len(xn_nyq)):
-        angle = xm_nyq[imode]*theta2D - xn_nyq[imode]*zeta2D
-        B = B + bmnc[iradius,imode]*np.cos(angle) + bmns[iradius,imode]*np.sin(angle)
+        angle = xm_nyq[imode] * theta2D - xn_nyq[imode] * zeta2D
+        B = B + bmnc[iradius, imode] * np.cos(angle) + bmns[iradius, imode] * np.sin(angle)
 
     X = R * np.cos(zeta2D)
     Y = R * np.sin(zeta2D)
@@ -344,13 +345,28 @@ def main(file,name='',figures_folder='results/nfp2', coils_curves=None, s_plot_i
 
     fig.patch.set_facecolor('white')
     ax = plt.axes(projection='3d')
-    ax.plot_surface(X, Y, Z, facecolors = cm.jet(B_rescaled), rstride=1, cstride=1, antialiased=False)
-    ax.auto_scale_xyz([X.min(), X.max()], [X.min(), X.max()], [X.min(), X.max()])
-    plt.tight_layout()
 
-    plt.figtext(0.5,0.99,os.path.abspath(filename),ha='center',va='top',fontsize=6)
-    if savefig: plt.savefig(os.path.join(figures_folder, name+'_VMEC_3Dplot.pdf'), bbox_inches = 'tight', pad_inches = 0)
-    else: plt.show()
+    # Plot the surface
+    ax.plot_surface(X, Y, Z, facecolors=cm.jet(B_rescaled), rstride=1, cstride=1, antialiased=False)
+
+    # Remove the grid
+    ax.grid(False)
+
+    # Remove the axes
+    ax.set_axis_off()
+
+    # Auto-scale the 3D plot
+    ax.auto_scale_xyz([X.min(), X.max()], [X.min(), X.max()], [X.min(), X.max()])
+
+    # Layout and save/show plot
+    plt.tight_layout()
+    plt.figtext(0.5, 0.99, os.path.abspath(filename), ha='center', va='top', fontsize=6)
+
+    if savefig:
+        plt.savefig(os.path.join(figures_folder, name + '_VMEC_3Dplot.pdf'), bbox_inches='tight', pad_inches=0)
+    else:
+        plt.show()
+
 
     # #### Mayavi plot ######
     # try:
