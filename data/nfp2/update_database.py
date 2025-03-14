@@ -1,59 +1,53 @@
 import sqlite3
 from pathlib import Path
 
-# Paths for the original and new databases
-original_db_path = Path('data/nfp2/nfp2.db')
-new_db_path = Path('data/nfp2/nfp2_converged.db')
+combined_db_path = Path('nfp2_combined.db')
 
-def create_converged_database(original_db_path, new_db_path):
+def find_stellarators_with_low_sum(db_path, weight_quasiisodynamic=10):
     try:
-        # Connect to the original database
-        conn_orig = sqlite3.connect(original_db_path)
-        cursor_orig = conn_orig.cursor()
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
 
-        # Check if the table exists and retrieve its CREATE TABLE statement
-        cursor_orig.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='stellarators';")
-        create_table_sql = cursor_orig.fetchone()
+        # Query to find the 30 stellarators with the lowest summed value
+        # (weighted quasiisodynamic + 1/inverse_aspect_ratio)
+        query = f"""
+            SELECT id, quasiisodynamic, inverse_aspect_ratio, 
+                   ({weight_quasiisodynamic} * quasiisodynamic + (1.0 / inverse_aspect_ratio)) AS sum_value
+            FROM stellarators_combined
+            WHERE convergence = 1
+                AND quasiisodynamic IS NOT NULL
+                AND inverse_aspect_ratio IS NOT NULL
+            ORDER BY sum_value ASC
+            LIMIT 30;
+        """
+        cursor.execute(query)
+        rows = cursor.fetchall()
 
-        if create_table_sql is None:
-            raise ValueError(f"Table 'stellarators' not found in {original_db_path}.")
+        conn.close()
 
-        create_table_sql = create_table_sql[0]  # Get the SQL statement
+        if rows:
+            # Print the IDs, quasiisodynamic, inverse_aspect_ratio, and the calculated sum_value
+            print(f"{'ID':<10}{'Quasiisodynamic':<20}{'Inverse Aspect Ratio':<25}{'Sum Value':<20}")
+            print("-" * 75)
+            for row in rows:
+                print(f"{row[0]:<10}{row[1]:<20}{row[2]:<25}{row[3]:<20.4f}")
 
-        # Connect to the new database
-        conn_new = sqlite3.connect(new_db_path)
-        cursor_new = conn_new.cursor()
+            # Calculate the total sum of quasiisodynamic and 1/inverse_aspect_ratio for the selected stellarators
+            total_quasiisodynamic = sum(row[1] for row in rows)
+            total_inverse_aspect_ratio = sum(1.0 / row[2] for row in rows)
+            total_sum = sum(row[3] for row in rows)
 
-        # Drop the table if it already exists
-        cursor_new.execute("DROP TABLE IF EXISTS stellarators;")
-
-        # Execute the CREATE TABLE statement in the new database
-        cursor_new.execute(create_table_sql)
-
-        # Copy rows where convergence = 1 from the original to the new table
-        cursor_orig.execute("SELECT * FROM stellarators WHERE convergence = 1;")
-        rows = cursor_orig.fetchall()
-
-        # Get the number of columns to generate the placeholders dynamically
-        cursor_orig.execute("PRAGMA table_info(stellarators);")
-        num_columns = len(cursor_orig.fetchall())
-        placeholders = ', '.join(['?'] * num_columns)
-
-        # Insert rows into the new table
-        insert_query = f"INSERT INTO stellarators VALUES ({placeholders})"
-        cursor_new.executemany(insert_query, rows)
-
-        # Commit the changes and close the connections
-        conn_new.commit()
-        conn_orig.close()
-        conn_new.close()
-
-        print(f"New database created at {new_db_path} with rows where convergence = 1.")
+            print("\nTotal values for the selected stellarators:")
+            print(f"Total Quasiisodynamic: {total_quasiisodynamic:.4f}")
+            print(f"Total 1/Inverse Aspect Ratio: {total_inverse_aspect_ratio:.4f}")
+            print(f"Total Sum Value: {total_sum:.4f}")
+        else:
+            print("No stellarators found matching the criteria.")
 
     except sqlite3.DatabaseError as e:
         print(f"Error accessing database: {e}")
     except ValueError as e:
         print(e)
 
-# Create the new database with filtered rows
-create_converged_database(original_db_path, new_db_path)
+# Call the function and print the result
+find_stellarators_with_low_sum(combined_db_path)
