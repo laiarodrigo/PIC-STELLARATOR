@@ -74,8 +74,6 @@ lgblss.train(opt_params, dtrain, num_boost_round=n_rounds)
 
 print("Model trained successfully")
 
-# Seed for reproducibility in torch operations
-torch.manual_seed(123)
 
 # Number of samples to draw from predicted distribution
 n_samples = 5000  # Use the number of rows in X_test as the number of samples
