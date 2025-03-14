@@ -12,8 +12,8 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 # Load the data from the SQLite database
-conn = sqlite3.connect('../../../../data/nfp2/nfp2.db')  # Adjust the path to your database file
-query = "SELECT * FROM stellarators"  # Adjust your query as needed
+conn = sqlite3.connect('../../../../data/nfp2/nfp2_combined.db')  # Adjust the path to your database file
+query = "SELECT * FROM stellarators_combined"  # Adjust your query as needed
 data_df = pd.read_sql_query(query, conn)
 conn.close()
 
@@ -38,16 +38,22 @@ features_no_outliers, test_features_no_outliers, target_no_outliers, test_target
 
 # Define and compile a model with 4 hidden layers
 def build_model_with_hidden_layers():
+    # model = Sequential()
+    # model.add(Dense(512, activation='relu', input_shape=(X.shape[1],)))  
+    # model.add(Dense(256, activation='relu'))  
+    # model.add(Dense(128, activation='relu')) 
+    # model.add(Dense(64, activation='relu'))  
+    # model.add(Dense(16, activation='relu'))  
+    # model.add(Dense(1))  
     model = Sequential()
-    model.add(Dense(512, activation='relu', input_shape=(X.shape[1],)))  
-    model.add(Dense(256, activation='relu'))  
-    model.add(Dense(128, activation='relu')) 
-    model.add(Dense(64, activation='relu'))  
+    model.add(Dense(256, activation='relu', input_shape=(X.shape[1],)))  
+    model.add(Dense(128, activation='relu'))  
+    model.add(Dense(64, activation='relu')) 
     model.add(Dense(16, activation='relu'))  
-    model.add(Dense(1))  
+    model.add(Dense(1)) 
     
     # Define Adam optimizer with a custom learning rate
-    optimizer = Adam(learning_rate=0.0001)  # You can adjust the learning rate as needed
+    optimizer = Adam(learning_rate=0.001)  # You can adjust the learning rate as needed
     
     model.compile(optimizer=optimizer,
                   loss='mean_squared_error',
@@ -57,7 +63,7 @@ def build_model_with_hidden_layers():
 # Train the model with 4 hidden layers
 model_with_hidden_layers = build_model_with_hidden_layers()
 model_with_hidden_layers.fit(features_no_outliers, target_no_outliers,
-                             epochs=500,  # Specify the number of epochs
+                             epochs=300,  # Specify the number of epochs
                              batch_size=500,  # Specify the batch size
                              validation_split=0.2)
 
@@ -72,4 +78,4 @@ print(f"Mean Squared Error: {mse}")
 print(f"R^2 Score: {r2}")
 
 # Save the trained model
-model_with_hidden_layers.save('first_try_normalized.keras')
+model_with_hidden_layers.save('520_normalizes.keras')
